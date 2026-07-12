@@ -10,7 +10,8 @@
 │   ├── models/               # Наші структури даних (чисті сутності)
 │   │   ├── position.go
 │   │   ├── mage.go
-│   │   └── orc.go
+│   │   ├── orc.go
+│   │   └── world.go
 │   │
 │   ├── engine/               # Логіка гри (Ігровий цикл, механіка бою, рух)
 │   │   └── loop.go
@@ -32,7 +33,7 @@
 3. Файли go.mod та go.sum
 Що тут лежить: Ваші залежності. Коли ви захочете встановити бібліотеку для графіки в консолі (наприклад, Lip Gloss), ви виконаєте команду go get ://github.com. Вона автоматично запишеться в go.mod.
 Аналог в PHP: go.mod — це composer.json, а go.sum — це composer.lock.
-
+  
 ⚠️ Головна пастка Go: Кругові імпорти (Circular Dependencies)
 В PHP ви можете легко зробити так: Клас User викликає метод класу Order, а клас Order всередині себе викликає метод класу User. PHP-FPM це пробачить.
 В Go це категорично заборонено. Якщо пакет engine імпортує пакет models, то пакет models не має права знати нічого про пакет engine. Якщо ви спробуєте це зробити, Go видасть помилку: import cycle not allowed і код не скомпілюється.
@@ -60,6 +61,7 @@ touch cmd/arena/main.go
 touch internal/models/position.go
 touch internal/models/mage.go
 touch internal/models/orc.go
+touch internal/models/world.go
 ```
 
 Тепер ваш репозиторій виглядає як професійний, ідіоматичний Go-проєкт.
@@ -124,6 +126,7 @@ type Orc struct {
     Health   int
     Damage   int
 }
+
 ```
 
 Підґрунтя: Зверніть увагу, як оголошуються поля. Спочатку йде назва поля, а потім його тип (Health int). Це незвично після PHP (int $health), але до цього швидко звикаєш. Завдяки вбудовуванню Position, ви зможете звертатися до координат мага напряму: mage.X = 5, хоча технічно вони лежать всередині mage.Position.X.3. Модель World (Ігровий світ / Арена)
