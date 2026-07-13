@@ -112,11 +112,21 @@ func renderMap() {
 	fmt.Println(s.Repeat("-", World.Width+2))
 }
 
+func moveMage0() {
+	mage := World.Mages[0]
+	mage.X = mage.X + 1
+}
+
 func main() {
 	fmt.Println("Hello, Game!")
 
 	initMages()
 	initOrcs()
 
+	renderMap()
+
+	fmt.Println("Moving Mage 0...")
+	moveMage0()
+	fmt.Println("Result map^")
 	renderMap()
 }
