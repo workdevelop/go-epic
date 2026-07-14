@@ -112,9 +112,14 @@ func renderMap() {
 	fmt.Println(s.Repeat("-", World.Width+2))
 }
 
-func moveMage0() {
-	mage := World.Mages[0]
-	mage.X = mage.X + 1
+func moveMage(character *models.Mage, stepX, stepY int) {
+	character.X += stepX
+	character.Y += stepY
+}
+
+func moveOrc(character *models.Orc, stepX, stepY int) {
+	character.X += stepX
+	character.Y += stepY
 }
 
 func main() {
@@ -126,7 +131,9 @@ func main() {
 	renderMap()
 
 	fmt.Println("Moving Mage 0...")
-	moveMage0()
-	fmt.Println("Result map^")
+	moveMage(&World.Mages[0], 1, 0)
+	fmt.Println("Moving Orc 1...")
+	moveOrc(&World.Orcs[1], -1, 1)
+	fmt.Println("Result map")
 	renderMap()
 }
