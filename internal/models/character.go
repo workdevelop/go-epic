@@ -11,9 +11,8 @@ func (o *Character) Move(dx, dy int) {
 	o.Y += dy
 }
 
-func (o *Character) TakeDamage(amount int) int {
-	o.Health = max(o.Health - amount, 0)
-	return o.Health
+func (o *Character) TakeDamage(amount int) {
+	o.Health = max(o.Health-amount, 0)
 }
 
 func (o Character) IsAlive() bool {
