@@ -18,3 +18,7 @@ func NewOrc(name string, health, x, y, damage int) Orc {
 		Damage: damage,
 	}
 }
+
+func (o Orc) AttackMage(mage *Mage) {
+	mage.TakeDamage(o.Damage)
+}

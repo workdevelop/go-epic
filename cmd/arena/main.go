@@ -125,8 +125,9 @@ func main() {
 	fmt.Println("Moving Orc 0...")
 	World.Orcs[0].Move(-3, 0)
 
-	fmt.Println("Mage 0 takes damage from Orc 0...")
-	World.Mages[0].TakeDamage(World.Orcs[0].Damage)
+	fmt.Println("Orc 0 attacks Mage 0 twice...")
+	World.Orcs[0].AttackMage(&World.Mages[0])
+	World.Orcs[0].AttackMage(&World.Mages[0])
 	fmt.Println("Mage 0 Health: ", World.Mages[0].Health)
 	if World.Mages[0].IsAlive() {
 		fmt.Println("Mage 0 is alive")
