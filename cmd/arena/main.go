@@ -92,13 +92,13 @@ func renderMap() {
 
 			for i := 0; i < len(World.Mages); i++ {
 				mage = World.Mages[i]
-				if mage.X == x && mage.Y == y {
+				if mage.IsAt(x, y) {
 					positionLabel = "M"
 				}
 			}
 			for i := 0; i < len(World.Orcs); i++ {
 				orc = World.Orcs[i]
-				if orc.X == x && orc.Y == y {
+				if orc.IsAt(x, y) {
 					positionLabel = "O"
 				}
 			}
@@ -112,16 +112,6 @@ func renderMap() {
 	fmt.Println(s.Repeat("-", World.Width+2))
 }
 
-func moveMage(character *models.Mage, stepX, stepY int) {
-	character.X += stepX
-	character.Y += stepY
-}
-
-func moveOrc(character *models.Orc, stepX, stepY int) {
-	character.X += stepX
-	character.Y += stepY
-}
-
 func main() {
 	fmt.Println("Hello, Game!")
 
@@ -131,9 +121,18 @@ func main() {
 	renderMap()
 
 	fmt.Println("Moving Mage 0...")
-	moveMage(&World.Mages[0], 1, 0)
-	fmt.Println("Moving Orc 1...")
-	moveOrc(&World.Orcs[1], -1, 1)
-	fmt.Println("Result map")
+	World.Mages[0].Move(1, 0)
+	fmt.Println("Moving Orc 0...")
+	World.Orcs[0].Move(-3, 0)
+
+	fmt.Println("Mage 0 takes damage from Orc 0...")
+	World.Mages[0].TakeDamage(World.Orcs[0].Damage)
+	fmt.Println("Mage 0 Health: ", World.Mages[0].Health)
+	if World.Mages[0].IsAlive() {
+		fmt.Println("Mage 0 is alive")
+	} else {
+		fmt.Println("Mage 0 is dead!")
+	}
+
 	renderMap()
 }

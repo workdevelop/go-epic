@@ -18,3 +18,16 @@ func NewMage(name string, health, x, y, mana int) Mage {
 		Mana: mana,
 	}
 }
+
+// func (o *Mage) Move(dx, dy int) {
+// 	o.X += dx
+// 	o.Y += dy
+// }
+
+// func (o *Mage) TakeDamage(amount int) {
+// 	o.Health -= amount
+// }
+
+// func (o Mage) IsAlive() bool {
+// 	return o.Health > 0
+// }
