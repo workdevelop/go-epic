@@ -11,3 +11,7 @@ func NewPosition(x, y int) Position {
 		Y: y,
 	}
 }
+
+func (o Position) IsAt(x, y int) bool {
+	return o.X == x && o.Y == y
+}
