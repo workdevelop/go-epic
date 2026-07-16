@@ -85,6 +85,9 @@ func main() {
 	// 3. Перевірка стану за допомогою методів-геттерів
 	fmt.Printf("Поточне здоров'я Мага: %d HP\n", mage.Health)
 	fmt.Printf("Чи живий Маг? -> %t\n", mage.IsAlive()) // %t виводить булеве значення (true/false)
-
 	renderWorld(world)
+	fmt.Printf("Чи на мапі Маг? -> %t\n", mage.IsOnMap(world)) // %t виводить булеве значення (true/false)
+	mage.Move(5, 8)
+	fmt.Printf("Позиції після ходу -> Маг: [%d,%d], Орк: [%d,%d]\n", mage.X, mage.Y, orc.X, orc.Y)
+	fmt.Printf("Чи на мапі Маг тепер? -> %t\n", mage.IsOnMap(world)) // %t виводить булеве значення (true/false)
 }

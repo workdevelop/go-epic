@@ -27,3 +27,7 @@ func (m *Mage) TakeDamage(amount int) {
 func (m Mage) IsAlive() bool {
 	return m.Health > 0
 }
+
+func (m Mage) IsOnMap(w World) bool {
+	return m.Y > 0 && m.Y <= w.Height && m.X > 0 && m.X <= w.Width
+}
