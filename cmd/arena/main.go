@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"go-epic/internal/engine"
 	"go-epic/internal/models" // Корінь 'go-epic' + шлях до папки з моделями
 )
 
@@ -52,7 +51,7 @@ func renderWorld(w models.World) {
 }
 
 func main() {
-	// Ініціалізуємо світ 10х10 з одним магом та одним орком
+	// Ініціалізуємо світ з одним магом та одним орком
 	world := models.World{
 		Width:  10,
 		Height: 10,
@@ -60,28 +59,32 @@ func main() {
 			{Position: models.Position{X: 2, Y: 2}, Health: 100, Mana: 50},
 		},
 		Orcs: []models.Orc{
-			{Position: models.Position{X: 7, Y: 7}, Health: 150, Damage: 25},
+			{Position: models.Position{X: 5, Y: 5}, Health: 150, Damage: 30},
 		},
 	}
 
-	fmt.Println("=== ДЕНЬ 2: ЕКСПЕРИМЕНТИ З ВКАЗІВНИКАМИ ===")
-	renderWorld(world)
+	fmt.Println("=== ДЕНЬ 3: МЕТОДИ СТРУКТУР ТА ЕМУЛЯЦІЯ БОЮ ===")
 
-	// 1. Спроба порухати орка НЕПРАВИЛЬНО (передаємо значення зрізу, тобто копію)
-	engine.MoveOrcWrong(world.Orcs[0], -1, -1)
-	fmt.Printf("\n"+"Після MoveOrcWrong: Орк стоїть на [%d, %d] (Зрушення не відбулося через копіювання)\n",
-		world.Orcs[0].X, world.Orcs[0].Y)
-	renderWorld(world)
+	// Зручно дістаємо посилання (вказівники) на наших перших юнітів зі зрізів світу.
+	// Знак & перед елементом масиву бере його точну адресу в пам'яті.
+	mage := &world.Mages[0]
+	orc := &world.Orcs[0]
 
-	// 2. Порухаємо мага ПРАВИЛЬНО.
-	// Знак & бере адресу пам'яті конкретного мага зі зрізу world.Mages
-	engine.MoveMage(&world.Mages[0], 1, 1)
+	// 1. Юніти роблять кроки навколо або назустріч один одному
+	fmt.Printf("Початкові позиції -> Маг: [%d,%d], Орк: [%d,%d]\n", mage.X, mage.Y, orc.X, orc.Y)
 
-	// 3. Порухаємо орка ПРАВИЛЬНО.
-	// Беремо адресу першого орка у масиві
-	engine.MoveOrc(&world.Orcs[0], -1, -1)
+	mage.Move(1, 1) // Виклик методу структури через крапку
+	orc.Move(-1, -1)
 
-	// 4. Рендеринг карти після правильного руху
-	fmt.Println("\nКАРТА ПІСЛЯ РУХУ (Маг змістився на +1, +1; Орк на -1, -1):")
+	fmt.Printf("Позиції після ходу -> Маг: [%d,%d], Орк: [%d,%d]\n", mage.X, mage.Y, orc.X, orc.Y)
+
+	// 2. Симуляція атаки: Орк б'є Мага
+	fmt.Printf("\n🪓 Орк замахнувся і б'є Мага на %dダメージ (урон)!\n", orc.Damage)
+	mage.TakeDamage(orc.Damage)
+
+	// 3. Перевірка стану за допомогою методів-геттерів
+	fmt.Printf("Поточне здоров'я Мага: %d HP\n", mage.Health)
+	fmt.Printf("Чи живий Маг? -> %t\n", mage.IsAlive()) // %t виводить булеве значення (true/false)
+
 	renderWorld(world)
 }
