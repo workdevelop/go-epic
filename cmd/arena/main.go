@@ -120,20 +120,9 @@ func main() {
 
 	renderMap()
 
-	fmt.Println("Moving Mage 0...")
-	World.Mages[0].Move(1, 0)
-	fmt.Println("Moving Orc 0...")
-	World.Orcs[0].Move(-3, 0)
-
-	fmt.Println("Orc 0 attacks Mage 0 twice...")
-	World.Orcs[0].AttackMage(&World.Mages[0])
-	World.Orcs[0].AttackMage(&World.Mages[0])
-	fmt.Println("Mage 0 Health: ", World.Mages[0].Health)
-	if World.Mages[0].IsAlive() {
-		fmt.Println("Mage 0 is alive")
-	} else {
-		fmt.Println("Mage 0 is dead!")
+	for i := 1; i <= 3; i++ {
+		fmt.Println("Tick " + strconv.Itoa(i))
+		World.Tick()
+		renderMap()
 	}
-
-	renderMap()
 }
