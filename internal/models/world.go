@@ -102,6 +102,7 @@ func (w *World) RandomMoveUnits() {
 	for i := 0; i < len(w.Units); i++ {
 		if w.Units[i].IsAlive() {
 			unitPosX, unitPosY := w.Units[i].GetPosition()
+
 			dx := -1 + rand.Intn(3)
 			if !w.isExsitingXPosition(unitPosX + dx) {
 				fmt.Printf("%s не може зсунутись гориз. з %d на %d кроків !\n", w.Units[i].GetName(), unitPosX, dx)
@@ -114,10 +115,10 @@ func (w *World) RandomMoveUnits() {
 				dy = 0
 			}
 
-			if !w.isFreePosition(unitPosX+dx, unitPosY+dy) {
+			if !(dx == 0 && dy == 0) && !w.isFreePosition(unitPosX+dx, unitPosY+dy) {
+				fmt.Printf("%s не може перейти з (%d, %d) на (%d, %d) !\n", w.Units[i].GetName(), unitPosX, unitPosY, unitPosX+dx, unitPosY+dy)
 				dx = 0
 				dy = 0
-				fmt.Printf("%s не може перейти з (%d, %d) на (%d, %d) !\n", w.Units[i].GetName(), unitPosX, unitPosY, unitPosX+dx, unitPosY+dy)
 			}
 
 			w.Units[i].Move(dx, dy)
