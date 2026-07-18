@@ -2,66 +2,76 @@ package models
 
 import (
 	"math/rand"
+	"strconv"
 )
+
+const MageHealth = 100
+const MageMana = 100
+
+const OrcHealth = 200
+const OrcDamage = 10
 
 type World struct {
 	Width  int
 	Height int
-	Mages  []Mage
-	Orcs   []Orc
+	Units  []Unit
 }
 
-func NewWorld(width, height int, mages []Mage, orcs []Orc) World {
-	world := World{
-		Width:  width,
-		Height: width,
-		Mages:  mages,
-		Orcs:   orcs,
-	}
-	return world
-}
+func (w *World) InitMages(numUnits int) {
+	xMage := 2
+	y := 2
 
-func (w World) CharacterCanMoveByX(character Character, dx int) bool {
-	return character.X+dx >= 0 && character.X+dx < w.Width
-}
-
-func (w World) CharacterCanMoveByY(character Character, dy int) bool {
-	return character.Y+dy >= 0 && character.Y+dy < w.Height
-}
-
-func (w *World) RandomMoveMages() {
-	for i := 0; i < len(w.Mages); i++ {
-		dx := -1 + rand.Intn(3)
-		if !w.CharacterCanMoveByX(w.Mages[i].Character, dx) {
-			dx = 0
+	for i := range numUnits {
+		mage := Mage{
+			Name:   "mage " + strconv.Itoa(i+1),
+			Health: MageHealth,
+			Position: Position{
+				X: xMage,
+				Y: y,
+			},
+			Mana: MageMana,
 		}
+		w.Units = append(w.Units, &mage)
 
-		dy := -1 + rand.Intn(3)
-		if !w.CharacterCanMoveByY(w.Mages[i].Character, dy) {
-			dy = 0
-		}
-
-		w.Mages[i].Move(dx, dy)
+		y = y + 1
 	}
 }
 
-func (w *World) RandomMoveOrcs() {
-	for i := 0; i < len(w.Orcs); i++ {
-		dx := -1 + rand.Intn(3)
-		if !w.CharacterCanMoveByX(w.Orcs[i].Character, dx) {
-			dx = 0
-		}
+func (w *World) InitOrcs(numUnits int) {
+	xOrc := 7
+	y := 2
 
-		dy := -1 + rand.Intn(3)
-		if !w.CharacterCanMoveByY(w.Orcs[i].Character, dy) {
-			dy = 0
+	for i := range numUnits {
+		orc := Orc{
+			Name:   "orc " + strconv.Itoa(i+1),
+			Health: MageHealth,
+			Position: Position{
+				X: xOrc,
+				Y: y,
+			},
+			Damage: OrcDamage,
 		}
+		w.Units = append(w.Units, &orc)
 
-		w.Orcs[i].Move(dx, dy)
+		y = y + 1
+	}
+}
+
+func (w *World) Init(numMages, numOrcs int) {
+	w.InitMages(numMages)
+	w.InitOrcs(numOrcs)
+}
+
+func (w *World) RandomMoveUnits() {
+	for i := 0; i < len(w.Units); i++ {
+		if w.Units[i].IsAlive() {
+			dx := -1 + rand.Intn(3)
+			dy := -1 + rand.Intn(3)
+			w.Units[i].Move(dx, dy)
+		}
 	}
 }
 
 func (w *World) Tick() {
-	w.RandomMoveMages()
-	w.RandomMoveOrcs()
+	w.RandomMoveUnits()
 }

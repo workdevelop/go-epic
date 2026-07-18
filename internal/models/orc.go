@@ -1,22 +1,23 @@
 package models
 
 type Orc struct {
-	Character
+	Name   string
+	Health int
 	Damage int
+	Position
 }
 
-func NewOrc(name string, health, x, y, damage int) Orc {
-	return Orc{
-		Character: Character{
-			Name:   name,
-			Health: health,
-			Position: Position{
-				X: x,
-				Y: y,
-			},
-		},
-		Damage: damage,
-	}
+func (o *Orc) Move(dx, dy int) {
+	o.X += dx
+	o.Y += dy
+}
+
+func (o *Orc) TakeDamage(amount int) {
+	o.Health = max(o.Health-amount, 0)
+}
+
+func (o Orc) IsAlive() bool {
+	return o.Health > 0
 }
 
 func (o Orc) AttackMage(mage *Mage) {
