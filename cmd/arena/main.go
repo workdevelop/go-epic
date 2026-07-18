@@ -31,6 +31,11 @@ func renderMap() {
 
 			for i := 0; i < len(World.Units); i++ {
 				unit := World.Units[i]
+				if !unit.IsAlive() {
+					// не виводимо дохлятину
+					continue
+				}
+
 				switch v := unit.(type) {
 				case *models.Mage:
 					if v.IsAt(x, y) {
@@ -52,14 +57,20 @@ func renderMap() {
 	fmt.Println(s.Repeat("-", World.Width+2))
 }
 
+func waitForInput() {
+	fmt.Scanln()
+}
+
 func main() {
 	fmt.Println("Hello, Game!")
 
 	World.Init(NumMage, NumOrc)
-
 	renderMap()
 
-	for i := 1; i <= 1; i++ {
+	i := 0
+	for {
+		waitForInput()
+		i++
 		fmt.Println("Tick " + strconv.Itoa(i))
 		World.Tick()
 		renderMap()
