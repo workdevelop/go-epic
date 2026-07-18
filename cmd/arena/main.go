@@ -11,7 +11,7 @@ const MapWidth = 10
 const MapHeight = 10
 
 const NumMage = 5
-const NumOrc = 4
+const NumOrc = 5
 
 var World models.World = models.World{
 	Width:  MapWidth,
