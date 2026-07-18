@@ -7,7 +7,8 @@ import (
 )
 
 type Engine struct {
-	World *models.World
+	World   *models.World
+	TickLog []string
 }
 
 func (e *Engine) moveUnits() {
@@ -20,18 +21,18 @@ func (e *Engine) moveUnits() {
 
 		dx := -1 + rand.Intn(3)
 		if !w.IsExistingXPosition(unitPosX + dx) {
-			fmt.Printf("%s не може зсунутись гориз. з %d на %d кроків !\n", w.Units[i].GetName(), unitPosX, dx)
+			//fmt.Printf("%s не може зсунутись гориз. з %d на %d кроків !\n", w.Units[i].GetName(), unitPosX, dx)
 			dx = 0
 		}
 
 		dy := -1 + rand.Intn(3)
 		if !w.IsExistingYPosition(unitPosY + dy) {
-			fmt.Printf("%s не може зсунутись верт. з %d на %d кроків !\n", w.Units[i].GetName(), unitPosY, dy)
+			//fmt.Printf("%s не може зсунутись верт. з %d на %d кроків !\n", w.Units[i].GetName(), unitPosY, dy)
 			dy = 0
 		}
 
 		if !(dx == 0 && dy == 0) && !w.IsFreePosition(unitPosX+dx, unitPosY+dy) {
-			fmt.Printf("%s не може перейти з (%d, %d) на (%d, %d) !\n", w.Units[i].GetName(), unitPosX, unitPosY, unitPosX+dx, unitPosY+dy)
+			//fmt.Printf("%s не може перейти з (%d, %d) на (%d, %d) !\n", w.Units[i].GetName(), unitPosX, unitPosY, unitPosX+dx, unitPosY+dy)
 			dx = 0
 			dy = 0
 		}
@@ -47,7 +48,8 @@ func (e *Engine) battle(attacker, victim models.Unit) {
 	if !victim.IsAlive() {
 		healthInfo = fmt.Sprintf("[%s] мертвий", victim.GetName())
 	}
-	fmt.Printf("⚔️ [%s] атакує [%s] і завдає %d шкоди%s!\n", attacker.GetName(), victim.GetName(), damage, healthInfo)
+	//fmt.Printf("⚔️ [%s] атакує [%s] і завдає %d шкоди%s!\n", attacker.GetName(), victim.GetName(), damage, healthInfo)
+	e.putToLog(fmt.Sprintf("⚔️ [%s] атакує [%s] і завдає %d шкоди%s!", attacker.GetName(), victim.GetName(), damage, healthInfo))
 }
 
 func getUnitType(unit models.Unit) string {
@@ -92,11 +94,25 @@ func (e *Engine) combats() {
 	}
 }
 
-func (w *Engine) sacrificeAllCorpses() {
+func (e *Engine) sacrificeAllCorpses() {
 	//
 }
 
+func (e *Engine) clearTickLog() {
+	e.TickLog = e.TickLog[:0]
+}
+
+func (e *Engine) putToLog(line string) {
+	e.TickLog = append(e.TickLog, line)
+}
+
+// func (e *Engine) Logs() []string {
+// 	return e.TickLog
+// }
+
 func (e *Engine) Tick() {
+	e.clearTickLog()
+
 	// рухаємо живих персонажів на довільні клітини
 	// зайняту клітину зайняти не можна
 	e.moveUnits()

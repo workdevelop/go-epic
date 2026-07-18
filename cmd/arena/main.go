@@ -58,6 +58,12 @@ func renderMap() {
 	fmt.Println(s.Repeat("-", World.Width+2))
 }
 
+func renderLogs(lines []string) {
+	for _, line := range lines {
+		fmt.Println(line)
+	}
+}
+
 func waitForInput() {
 	fmt.Scanln()
 }
@@ -79,5 +85,6 @@ func main() {
 		fmt.Println("Tick " + strconv.Itoa(i))
 		e.Tick()
 		renderMap()
+		renderLogs(e.TickLog)
 	}
 }
