@@ -20,6 +20,14 @@ func (o Orc) IsAlive() bool {
 	return o.Health > 0
 }
 
-func (o Orc) AttackMage(mage *Mage) {
-	mage.TakeDamage(o.Damage)
+func (o Orc) GetPosition() (int, int) {
+	return o.X, o.Y
+}
+
+func (o Orc) GetName() string {
+	return o.Name
+}
+
+func (o Orc) GetDamage() int {
+	return o.Damage
 }
