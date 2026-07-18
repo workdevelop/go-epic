@@ -59,7 +59,7 @@ func main() {
 
 	renderMap()
 
-	for i := 1; i <= 3; i++ {
+	for i := 1; i <= 1; i++ {
 		fmt.Println("Tick " + strconv.Itoa(i))
 		World.Tick()
 		renderMap()
