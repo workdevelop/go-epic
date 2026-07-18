@@ -21,6 +21,16 @@ type World struct {
 	Units  []Unit
 }
 
+func (w World) isFreePosition(x, y int) bool {
+	for i := 0; i < len(w.Units); i++ {
+		posX, posY := w.Units[i].GetPosition()
+		if posX == x && posY == y {
+			return false
+		}
+	}
+	return true
+}
+
 func (w *World) InitUnits(unitType string, numUnits int) {
 	var names []string
 	if unitType == "mage" {
@@ -33,6 +43,10 @@ func (w *World) InitUnits(unitType string, numUnits int) {
 	for range numUnits {
 		x := rand.Intn(w.Width)
 		y := rand.Intn(w.Height)
+
+		if !w.isFreePosition(x, y) {
+			continue
+		}
 
 		if unitType == "mage" {
 			mage := Mage{
