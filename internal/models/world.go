@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"math/rand"
 	s "strings"
 )
@@ -19,6 +20,14 @@ type World struct {
 	Width  int
 	Height int
 	Units  []Unit
+}
+
+func (w World) isExsitingXPosition(x int) bool {
+	return x >= 0 && x < w.Width
+}
+
+func (w World) isExsitingYPosition(y int) bool {
+	return y >= 0 && y < w.Height
 }
 
 func (w World) isFreePosition(x, y int) bool {
@@ -41,11 +50,14 @@ func (w *World) InitUnits(unitType string, numUnits int) {
 
 	nameIndex := 0
 	for range numUnits {
-		x := rand.Intn(w.Width)
-		y := rand.Intn(w.Height)
+		var x, y int
+		for {
+			x = rand.Intn(w.Width)
+			y = rand.Intn(w.Height)
 
-		if !w.isFreePosition(x, y) {
-			continue
+			if w.isFreePosition(x, y) {
+				break
+			}
 		}
 
 		if unitType == "mage" {
@@ -91,13 +103,21 @@ func (w *World) RandomMoveUnits() {
 		if w.Units[i].IsAlive() {
 			unitPosX, unitPosY := w.Units[i].GetPosition()
 			dx := -1 + rand.Intn(3)
-			if unitPosX+dx < 0 || unitPosX+dx >= w.Width {
+			if !w.isExsitingXPosition(unitPosX + dx) {
+				fmt.Printf("%s не може зсунутись гориз. з %d на %d кроків !\n", w.Units[i].GetName(), unitPosX, dx)
 				dx = 0
 			}
 
 			dy := -1 + rand.Intn(3)
-			if unitPosY+dy < 0 || unitPosY+dy >= w.Height {
+			if !w.isExsitingYPosition(unitPosY + dy) {
+				fmt.Printf("%s не може зсунутись верт. з %d на %d кроків !\n", w.Units[i].GetName(), unitPosY, dy)
 				dy = 0
+			}
+
+			if !w.isFreePosition(unitPosX+dx, unitPosY+dy) {
+				dx = 0
+				dy = 0
+				fmt.Printf("%s не може перейти з (%d, %d) на (%d, %d) !\n", w.Units[i].GetName(), unitPosX, unitPosY, unitPosX+dx, unitPosY+dy)
 			}
 
 			w.Units[i].Move(dx, dy)
