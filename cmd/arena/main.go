@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"go-epic/internal/engine"
 	"go-epic/internal/models"
 	"strconv"
 	s "strings"
@@ -65,6 +66,10 @@ func main() {
 	fmt.Println("Hello, Game!")
 
 	World.Init(NumMage, NumOrc)
+	e := engine.Engine{
+		World: &World,
+	}
+
 	renderMap()
 
 	i := 0
@@ -72,7 +77,7 @@ func main() {
 		waitForInput()
 		i++
 		fmt.Println("Tick " + strconv.Itoa(i))
-		World.Tick()
+		e.Tick()
 		renderMap()
 	}
 }
