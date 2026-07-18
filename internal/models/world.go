@@ -160,10 +160,6 @@ func getUnitType(unit Unit) string {
 	return ""
 }
 
-func waitForInput() {
-	fmt.Scanln()
-}
-
 func Battle(attacker, victim Unit) {
 	damage := attacker.GetDamage()
 	victim.TakeDamage(damage)
@@ -203,8 +199,6 @@ func (w *World) SacrificeAllCorpses() {
 }
 
 func (w *World) Tick() {
-	//waitForInput()
-
 	// рухаємо живих персонажів на довільні клітини
 	// зайняту клітину зайняти не можна
 	w.MoveUnits()
