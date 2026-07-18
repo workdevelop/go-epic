@@ -100,29 +100,30 @@ func (w *World) Init(numMages, numOrcs int) {
 
 func (w *World) MoveUnits() {
 	for i := 0; i < len(w.Units); i++ {
-		if w.Units[i].IsAlive() {
-			unitPosX, unitPosY := w.Units[i].GetPosition()
-
-			dx := -1 + rand.Intn(3)
-			if !w.isExsitingXPosition(unitPosX + dx) {
-				fmt.Printf("%s не може зсунутись гориз. з %d на %d кроків !\n", w.Units[i].GetName(), unitPosX, dx)
-				dx = 0
-			}
-
-			dy := -1 + rand.Intn(3)
-			if !w.isExsitingYPosition(unitPosY + dy) {
-				fmt.Printf("%s не може зсунутись верт. з %d на %d кроків !\n", w.Units[i].GetName(), unitPosY, dy)
-				dy = 0
-			}
-
-			if !(dx == 0 && dy == 0) && !w.isFreePosition(unitPosX+dx, unitPosY+dy) {
-				fmt.Printf("%s не може перейти з (%d, %d) на (%d, %d) !\n", w.Units[i].GetName(), unitPosX, unitPosY, unitPosX+dx, unitPosY+dy)
-				dx = 0
-				dy = 0
-			}
-
-			w.Units[i].Move(dx, dy)
+		if !w.Units[i].IsAlive() {
+			continue
 		}
+		unitPosX, unitPosY := w.Units[i].GetPosition()
+
+		dx := -1 + rand.Intn(3)
+		if !w.isExsitingXPosition(unitPosX + dx) {
+			fmt.Printf("%s не може зсунутись гориз. з %d на %d кроків !\n", w.Units[i].GetName(), unitPosX, dx)
+			dx = 0
+		}
+
+		dy := -1 + rand.Intn(3)
+		if !w.isExsitingYPosition(unitPosY + dy) {
+			fmt.Printf("%s не може зсунутись верт. з %d на %d кроків !\n", w.Units[i].GetName(), unitPosY, dy)
+			dy = 0
+		}
+
+		if !(dx == 0 && dy == 0) && !w.isFreePosition(unitPosX+dx, unitPosY+dy) {
+			fmt.Printf("%s не може перейти з (%d, %d) на (%d, %d) !\n", w.Units[i].GetName(), unitPosX, unitPosY, unitPosX+dx, unitPosY+dy)
+			dx = 0
+			dy = 0
+		}
+
+		w.Units[i].Move(dx, dy)
 	}
 }
 
@@ -165,13 +166,17 @@ func Battle(attacker, victim Unit) {
 	victim.TakeDamage(damage)
 	healthInfo := ""
 	if !victim.IsAlive() {
-		healthInfo = fmt.Sprintf("[%s] мертвий", victim.GetName())
+		healthInfo = fmt.Sprintf(", [%s] мертвий", victim.GetName())
 	}
 	fmt.Printf("⚔️ [%s] атакує [%s] і завдає %d шкоди%s!\n", attacker.GetName(), victim.GetName(), damage, healthInfo)
 }
 
 func (w *World) Combats() {
 	for i := 0; i < len(w.Units); i++ {
+		if !w.Units[i].IsAlive() {
+			continue
+		}
+
 		srcType := getUnitType(w.Units[i])
 
 		srcPosX, srcPosY := w.Units[i].GetPosition()
@@ -181,6 +186,9 @@ func (w *World) Combats() {
 		rectY2 := srcPosY + 1
 
 		for k := 0; k < len(w.Units); k++ {
+			if !w.Units[k].IsAlive() {
+				continue
+			}
 			targetType := getUnitType(w.Units[k])
 			if targetType == srcType {
 				continue
