@@ -98,7 +98,7 @@ func (w *World) Init(numMages, numOrcs int) {
 	w.InitUnits("orc", numOrcs)
 }
 
-func (w *World) RandomMoveUnits() {
+func (w *World) MoveUnits() {
 	for i := 0; i < len(w.Units); i++ {
 		if w.Units[i].IsAlive() {
 			unitPosX, unitPosY := w.Units[i].GetPosition()
@@ -126,6 +126,93 @@ func (w *World) RandomMoveUnits() {
 	}
 }
 
+func (w *World) GetTargetsForUnit(srcUnit Unit) []*Unit {
+	var res []*Unit
+	srcPosX, srcPosY := srcUnit.GetPosition()
+
+	rectX1 := srcPosX - 1
+	rectY1 := srcPosY - 1
+	rectX2 := srcPosX + 1
+	rectY2 := srcPosY + 1
+
+	for i := 0; i < len(w.Units); i++ {
+		if &w.Units[i] == &srcUnit {
+			continue
+		}
+
+		currUnit := w.Units[i]
+		posX, posY := currUnit.GetPosition()
+		if posX >= rectX1 && posY >= rectY1 && posX <= rectX2 && posY <= rectY2 {
+			res = append(res, &currUnit)
+		}
+	}
+
+	return res
+}
+
+func getUnitType(unit Unit) string {
+	switch unit.(type) {
+	case *Mage:
+		return "mage"
+	case *Orc:
+		return "orc"
+	}
+	return ""
+}
+
+func waitForInput() {
+	fmt.Scanln()
+}
+
+func Battle(attacker, victim Unit) {
+	damage := attacker.GetDamage()
+	victim.TakeDamage(damage)
+	healthInfo := ""
+	if !victim.IsAlive() {
+		healthInfo = fmt.Sprintf("[%s] мертвий", victim.GetName())
+	}
+	fmt.Printf("⚔️ [%s] атакує [%s] і завдає %d шкоди%s!\n", attacker.GetName(), victim.GetName(), damage, healthInfo)
+}
+
+func (w *World) Combats() {
+	for i := 0; i < len(w.Units); i++ {
+		srcType := getUnitType(w.Units[i])
+
+		srcPosX, srcPosY := w.Units[i].GetPosition()
+		rectX1 := srcPosX - 1
+		rectY1 := srcPosY - 1
+		rectX2 := srcPosX + 1
+		rectY2 := srcPosY + 1
+
+		for k := 0; k < len(w.Units); k++ {
+			targetType := getUnitType(w.Units[k])
+			if targetType == srcType {
+				continue
+			}
+
+			posX, posY := w.Units[k].GetPosition()
+			if posX >= rectX1 && posY >= rectY1 && posX <= rectX2 && posY <= rectY2 {
+				Battle(w.Units[i], w.Units[k])
+			}
+		}
+	}
+}
+
+func (w *World) SacrificeAllCorpses() {
+	//
+}
+
 func (w *World) Tick() {
-	w.RandomMoveUnits()
+	//waitForInput()
+
+	// рухаємо живих персонажів на довільні клітини
+	// зайняту клітину зайняти не можна
+	w.MoveUnits()
+
+	// світ аналізує нові координати.
+	// Якщо маг і орк опиняються на сусідніх клітинках - бійка
+	w.Combats()
+
+	// Clean up Dead Bodies - мертві персонажі не будуть виводитись
+	w.SacrificeAllCorpses()
 }
