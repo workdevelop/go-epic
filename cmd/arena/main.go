@@ -64,6 +64,23 @@ func renderLogs(lines []string) {
 	}
 }
 
+func renderAliveUnits() {
+	fmt.Println()
+	fmt.Println("=========================")
+	fmt.Println("==== Still in battle ====")
+	fmt.Println("=========================")
+	fmt.Printf("%15s| %4s   |\n", "Name", "Pos")
+	fmt.Printf("---------------|--------|\n")
+
+	for i := 0; i < len(World.Units); i++ {
+		if !World.Units[i].IsAlive() {
+			continue
+		}
+		posX, posY := World.Units[i].GetPosition()
+		fmt.Printf("%15s| %2d %2d  |\n", World.Units[i].GetName(), posX, posY)
+	}
+}
+
 func waitForInput() {
 	fmt.Scanln()
 }
@@ -84,7 +101,9 @@ func main() {
 		i++
 		fmt.Println("Tick " + strconv.Itoa(i))
 		e.Tick()
+
 		renderMap()
 		renderLogs(e.TickLog)
+		renderAliveUnits()
 	}
 }
