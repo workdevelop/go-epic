@@ -82,13 +82,28 @@ func renderAliveUnits() {
 	}
 }
 
+func resetCursor() {
+	fmt.Print("\x1b[H")
+}
+
+func hideCursor() {
+	fmt.Print("\x1b[?25l")
+}
+
+func clearScreen() {
+	fmt.Print("\x1b[2J")
+}
+
 func main() {
-	fmt.Println("Hello, Game!")
+	hideCursor()
 
 	World.Init(NumMage, NumOrc)
 	e := engine.Engine{
 		World: &World,
 	}
+
+	clearScreen()
+	resetCursor()
 	renderMap()
 
 	ticker := time.NewTicker(200 * time.Millisecond)
@@ -101,8 +116,9 @@ func main() {
 
 		e.Tick()
 
+		resetCursor()
 		renderMap()
-		renderLogs(e.TickLog)
-		renderAliveUnits()
+		//renderLogs(e.TickLog)
+		//renderAliveUnits()
 	}
 }
