@@ -6,6 +6,7 @@ import (
 	"go-epic/internal/models"
 	"strconv"
 	s "strings"
+	"time"
 )
 
 const MapWidth = 10
@@ -81,10 +82,6 @@ func renderAliveUnits() {
 	}
 }
 
-func waitForInput() {
-	fmt.Scanln()
-}
-
 func main() {
 	fmt.Println("Hello, Game!")
 
@@ -92,14 +89,16 @@ func main() {
 	e := engine.Engine{
 		World: &World,
 	}
-
 	renderMap()
 
+	ticker := time.NewTicker(200 * time.Millisecond)
+	defer ticker.Stop()
+
 	i := 0
-	for {
-		waitForInput()
+	for range ticker.C {
 		i++
 		fmt.Println("Tick " + strconv.Itoa(i))
+
 		e.Tick()
 
 		renderMap()
