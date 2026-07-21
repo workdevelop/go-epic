@@ -4,6 +4,7 @@ import "math/rand"
 
 type Mage struct {
 	Position
+	Name   string
 	Health int
 	Mana   int
 }
@@ -41,4 +42,16 @@ func (m Mage) GetPosition() (int, int) {
 
 func (m Mage) GetType() rune {
 	return 'M'
+}
+
+func (m Mage) GetName() string {
+	return m.Name
+}
+
+func (m Mage) GetHealth() int {
+	return m.Health
+}
+
+func (m Mage) GetDamage() int {
+	return rand.Intn(15) + 15
 }

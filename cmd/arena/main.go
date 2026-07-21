@@ -11,10 +11,17 @@ func main() {
 		Width:  10,
 		Height: 10,
 		Units: []models.Unit{
-			&models.Mage{Position: models.Position{X: 2, Y: 3}, Health: 100, Mana: 50},
-			&models.Mage{Position: models.Position{X: 3, Y: 2}, Health: 100, Mana: 50},
-			&models.Orc{Position: models.Position{X: 7, Y: 6}, Health: 150, Damage: 30},
-			&models.Orc{Position: models.Position{X: 8, Y: 7}, Health: 150, Damage: 30},
+			&models.Mage{Position: models.Position{X: 2, Y: 2}, Name: "Гендальф", Health: 100, Mana: 50},
+			&models.Mage{Position: models.Position{X: 3, Y: 3}, Name: "Саруман", Health: 100, Mana: 50},
+			&models.Mage{Position: models.Position{X: 2, Y: 8}, Name: "Рейстлін", Health: 90, Mana: 70},
+			&models.Mage{Position: models.Position{X: 4, Y: 5}, Name: "Медів", Health: 110, Mana: 40},
+			&models.Mage{Position: models.Position{X: 3, Y: 9}, Name: "Джайна", Health: 95, Mana: 60},
+
+			&models.Orc{Position: models.Position{X: 9, Y: 9}, Name: "Тралл", Health: 150, Damage: 20},
+			&models.Orc{Position: models.Position{X: 8, Y: 8}, Name: "Громмаш", Health: 160, Damage: 25},
+			&models.Orc{Position: models.Position{X: 9, Y: 2}, Name: "Дуротан", Health: 140, Damage: 18},
+			&models.Orc{Position: models.Position{X: 7, Y: 5}, Name: "Оргрім", Health: 150, Damage: 22},
+			&models.Orc{Position: models.Position{X: 8, Y: 3}, Name: "Гулдан", Health: 120, Damage: 30},
 		},
 	}
 

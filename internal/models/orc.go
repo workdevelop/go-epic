@@ -4,6 +4,7 @@ import "math/rand"
 
 type Orc struct {
 	Position
+	Name   string
 	Health int
 	Damage int
 }
@@ -32,10 +33,22 @@ func (o *Orc) RandomStep() (int, int) {
 	return dx, dy
 }
 
-func (m Orc) GetPosition() (int, int) {
-	return m.X, m.Y
+func (o Orc) GetPosition() (int, int) {
+	return o.X, o.Y
 }
 
-func (m Orc) GetType() rune {
+func (o Orc) GetType() rune {
 	return 'O'
+}
+
+func (o Orc) GetName() string {
+	return o.Name
+}
+
+func (o Orc) GetDamage() int {
+	return rand.Intn(10) + o.Damage
+}
+
+func (o Orc) GetHealth() int {
+	return o.Health
 }
