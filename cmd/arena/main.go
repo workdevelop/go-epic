@@ -1,11 +1,9 @@
 package main
 
 import (
-	"fmt"
 	"go-epic/internal/engine"
 	"go-epic/internal/models"
-	"strconv"
-	s "strings"
+	"go-epic/internal/render"
 	"time"
 )
 
@@ -20,91 +18,14 @@ var World models.World = models.World{
 	Height: MapHeight,
 }
 
-func renderMap() {
-	var positionLabel string
-	var mapLine string
-
-	fmt.Println(s.Repeat("-", World.Width+2))
-
-	for y := 0; y < World.Height; y++ {
-		mapLine = "|"
-		for x := 0; x < World.Width; x++ {
-			positionLabel = " "
-
-			for i := 0; i < len(World.Units); i++ {
-				unit := World.Units[i]
-				if !unit.IsAlive() {
-					// не виводимо дохлятину
-					continue
-				}
-
-				switch v := unit.(type) {
-				case *models.Mage:
-					if v.IsAt(x, y) {
-						positionLabel = "M"
-					}
-				case *models.Orc:
-					if v.IsAt(x, y) {
-						positionLabel = "O"
-					}
-				}
-			}
-
-			mapLine = mapLine + positionLabel
-		}
-		mapLine = mapLine + "|"
-		fmt.Println(mapLine)
-	}
-
-	fmt.Println(s.Repeat("-", World.Width+2))
-}
-
-func renderLogs(lines []string) {
-	for _, line := range lines {
-		fmt.Println(line)
-	}
-}
-
-func renderAliveUnits() {
-	fmt.Println()
-	fmt.Println("=========================")
-	fmt.Println("==== Still in battle ====")
-	fmt.Println("=========================")
-	fmt.Printf("%15s| %4s   |\n", "Name", "Pos")
-	fmt.Printf("---------------|--------|\n")
-
-	for i := 0; i < len(World.Units); i++ {
-		if !World.Units[i].IsAlive() {
-			continue
-		}
-		posX, posY := World.Units[i].GetPosition()
-		fmt.Printf("%15s| %2d %2d  |\n", World.Units[i].GetName(), posX, posY)
-	}
-}
-
-func resetCursor() {
-	fmt.Print("\x1b[H")
-}
-
-func hideCursor() {
-	fmt.Print("\x1b[?25l")
-}
-
-func clearScreen() {
-	fmt.Print("\x1b[2J")
-}
-
 func main() {
-	hideCursor()
-
 	World.Init(NumMage, NumOrc)
 	e := engine.Engine{
 		World: &World,
 	}
 
-	clearScreen()
-	resetCursor()
-	renderMap()
+	render.ClearScreen()
+	render.RenderWorld(&World)
 
 	ticker := time.NewTicker(200 * time.Millisecond)
 	defer ticker.Stop()
@@ -112,13 +33,9 @@ func main() {
 	i := 0
 	for range ticker.C {
 		i++
-		fmt.Println("Tick " + strconv.Itoa(i))
-
 		e.Tick()
 
-		resetCursor()
-		renderMap()
-		//renderLogs(e.TickLog)
-		//renderAliveUnits()
+		render.RenderWorld(&World)
+		render.RenderLogs(e.TickLog)
 	}
 }
