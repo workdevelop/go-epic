@@ -29,15 +29,13 @@ func (w *World) Tick() {
 		}
 
 		dx, dy := w.Units[i].RandomStep()
-		x, y := w.Units[i].GetPosition()
 
-		nextX := x + dx
-		nextY := y + dy
-
-		// Перевірка меж карти (стін)
-		if nextX > 0 && nextX < w.Width-1 && nextY > 0 && nextY < w.Height-1 {
-			w.Units[i].Move(dx, dy)
+		err := w.Units[i].Move(dx, dy, w.Width, w.Height)
+		if err != nil {
+			w.BattleLog = append(w.BattleLog, fmt.Sprintf("⚠️ %s: %s", w.Units[i].GetName(), err.Error()))
+			continue
 		}
+
 	}
 
 	// 2. Етап Бою (Пошук Колізій через універсальний Battle)

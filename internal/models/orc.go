@@ -1,6 +1,9 @@
 package models
 
-import "math/rand"
+import (
+	"errors"
+	"math/rand"
+)
 
 type Orc struct {
 	Position
@@ -22,9 +25,14 @@ func (o Orc) IsAlive() bool {
 	return o.Health > 0
 }
 
-func (o *Orc) Move(dx, dy int) {
+func (o *Orc) Move(dx, dy, worldWidth, worldHeight int) error {
+	if o.X+dx <= 0 || o.X+dx >= worldWidth-1 || o.Y+dy <= 0 || o.Y+dy >= worldHeight-1 {
+		return errors.New("Орк впилячився головою об стіни, намагаючись втекти")
+	}
+
 	o.X += dx
 	o.Y += dy
+	return nil
 }
 
 func (o *Orc) RandomStep() (int, int) {

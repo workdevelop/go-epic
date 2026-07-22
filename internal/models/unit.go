@@ -1,7 +1,7 @@
 package models
 
 type Unit interface {
-	Move(dx, dy int)
+	Move(dx, dy, worldWidth, worldHeight int) error
 	IsAlive() bool
 	RandomStep() (int, int)
 	GetPosition() (int, int) // Повертає X та Y одночасно

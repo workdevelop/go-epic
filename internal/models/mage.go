@@ -1,6 +1,9 @@
 package models
 
-import "math/rand"
+import (
+	"errors"
+	"math/rand"
+)
 
 type Mage struct {
 	Position
@@ -24,9 +27,14 @@ func (m Mage) IsAlive() bool {
 	return m.Health > 0
 }
 
-func (m *Mage) Move(dx, dy int) {
+func (m *Mage) Move(dx, dy, worldWidth, worldHeight int) error {
+
+	if m.X+dx <= 0 || m.X+dx >= worldWidth-1 || m.Y+dy <= 0 || m.Y+dy >= worldHeight-1 {
+		return errors.New("Маг намагався втекти з поля. Хід заблоковано")
+	}
 	m.X += dx
 	m.Y += dy
+	return nil
 }
 
 // RandomStep вираховує випадкове зміщення для мага

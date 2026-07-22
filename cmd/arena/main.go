@@ -62,12 +62,14 @@ func main() {
 
 		if liveMages == 0 {
 			// Перед виходом повертаємо видимість курсору термінала
-			fmt.Print("\x1b[?25h")
+			// fmt.Print("\x1b[?25h")
+			fmt.Print("\x1b[2J")
 			fmt.Println("\n🔴 ОРКИ ПЕРЕМОГЛИ! ГРА ЗАВЕРШЕНА.")
 			break
 		}
 		if liveOrcs == 0 {
-			fmt.Print("\x1b[?25h")
+			// fmt.Print("\x1b[?25h")
+			fmt.Print("\x1b[2J")
 			fmt.Println("\n🔵 МАГИ ПЕРЕМОГЛИ! ГРА ЗАВЕРШЕНА.")
 			break
 		}
