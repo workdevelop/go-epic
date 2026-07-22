@@ -21,14 +21,6 @@ const MageMana = 100
 const OrcHealth = 100
 const OrcDamage = 10
 
-func (w World) IsExistingXPosition(x int) bool {
-	return x >= 0 && x < w.Width
-}
-
-func (w World) IsExistingYPosition(y int) bool {
-	return y >= 0 && y < w.Height
-}
-
 func (w World) IsFreePosition(x, y int) bool {
 	for i := 0; i < len(w.Units); i++ {
 		posX, posY := w.Units[i].GetPosition()

@@ -17,27 +17,18 @@ func (e *Engine) moveUnits() {
 		if !e.World.Units[i].IsAlive() {
 			continue
 		}
-		unitPosX, unitPosY := w.Units[i].GetPosition()
 
 		dx := -1 + rand.Intn(3)
-		if !w.IsExistingXPosition(unitPosX + dx) {
-			//fmt.Printf("%s не може зсунутись гориз. з %d на %d кроків !\n", w.Units[i].GetName(), unitPosX, dx)
-			dx = 0
-		}
-
 		dy := -1 + rand.Intn(3)
-		if !w.IsExistingYPosition(unitPosY + dy) {
-			//fmt.Printf("%s не може зсунутись верт. з %d на %d кроків !\n", w.Units[i].GetName(), unitPosY, dy)
-			dy = 0
+
+		if dx == 0 && dy == 0 {
+			continue
 		}
 
-		if !(dx == 0 && dy == 0) && !w.IsFreePosition(unitPosX+dx, unitPosY+dy) {
-			//fmt.Printf("%s не може перейти з (%d, %d) на (%d, %d) !\n", w.Units[i].GetName(), unitPosX, unitPosY, unitPosX+dx, unitPosY+dy)
-			dx = 0
-			dy = 0
+		err := w.Units[i].Move(e.World.Width, e.World.Height, dx, dy)
+		if err != nil {
+			e.putToLog(fmt.Sprintf("[%s] намагався пробити стіну карти", w.Units[i].GetName()))
 		}
-
-		w.Units[i].Move(dx, dy)
 	}
 }
 

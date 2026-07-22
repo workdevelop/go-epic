@@ -1,5 +1,7 @@
 package models
 
+import "errors"
+
 type Orc struct {
 	Name   string
 	Health int
@@ -7,9 +9,15 @@ type Orc struct {
 	Position
 }
 
-func (o *Orc) Move(dx, dy int) {
+func (o *Orc) Move(mapWidth, mapHeight, dx, dy int) error {
+	if o.X+dx < 0 || o.X+dx >= mapWidth || o.Y+dy < 0 || o.Y+dy >= mapHeight {
+		return errors.New("out of bounds")
+	}
+
 	o.X += dx
 	o.Y += dy
+
+	return nil
 }
 
 func (o *Orc) TakeDamage(amount int) {

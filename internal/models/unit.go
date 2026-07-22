@@ -1,7 +1,7 @@
 package models
 
 type Unit interface {
-	Move(dx, dy int)
+	Move(mapWidth, mapHeight, dx, dy int) error
 	IsAlive() bool
 	GetPosition() (int, int)
 	GetName() string
