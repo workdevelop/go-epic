@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"go-epic/internal/models"
+	"time"
 )
 
 func main() {
@@ -11,11 +12,11 @@ func main() {
 		Width:  10,
 		Height: 10,
 		Units: []models.Unit{
-			&models.Mage{Position: models.Position{X: 2, Y: 2}, Name: "Гендальф", Health: 100, Mana: 50},
-			&models.Mage{Position: models.Position{X: 3, Y: 3}, Name: "Саруман", Health: 100, Mana: 50},
-			&models.Mage{Position: models.Position{X: 2, Y: 8}, Name: "Рейстлін", Health: 90, Mana: 70},
-			&models.Mage{Position: models.Position{X: 4, Y: 5}, Name: "Медів", Health: 110, Mana: 40},
-			&models.Mage{Position: models.Position{X: 3, Y: 9}, Name: "Джайна", Health: 95, Mana: 60},
+			&models.Mage{Position: models.Position{X: 2, Y: 2}, Name: "Гендальф", Health: 301, Mana: 150},
+			&models.Mage{Position: models.Position{X: 3, Y: 3}, Name: "Саруман", Health: 220, Mana: 50},
+			&models.Mage{Position: models.Position{X: 2, Y: 8}, Name: "Рейстлін", Health: 132, Mana: 70},
+			&models.Mage{Position: models.Position{X: 4, Y: 5}, Name: "Медів", Health: 170, Mana: 140},
+			&models.Mage{Position: models.Position{X: 3, Y: 9}, Name: "Джайна", Health: 121, Mana: 60},
 
 			&models.Orc{Position: models.Position{X: 9, Y: 9}, Name: "Тралл", Health: 150, Damage: 20},
 			&models.Orc{Position: models.Position{X: 8, Y: 8}, Name: "Громмаш", Health: 160, Damage: 25},
@@ -25,22 +26,52 @@ func main() {
 		},
 	}
 
-	fmt.Println("=== ДЕНЬ 5: ПОЛІМОРФІЗМ ТА ІНТЕРФЕЙСИ ===")
+	fmt.Println("=== ДЕНЬ 7:  Анатомія довгоживучих процесів та time.Ticker ===")
 
 	fmt.Println("\n🎬 Початковий стан мапи:")
 	renderWorld(world)
 
-	// Симулюємо 3 покрокові ходи
-	for turn := 1; turn <= 3; turn++ {
-		fmt.Printf("\n➡️ Натисніть Enter для переходу до кроку %d...", turn)
-		var input string
-		fmt.Scanln(&input)
+	ticker := time.NewTicker(200 * time.Microsecond)
+	defer ticker.Stop()
+	turn := 0
+	for range ticker.C {
+		turn++
+		liveMages, liveOrcs := 0, 0
+		for _, u := range world.Units {
+			if u.IsAlive() {
+				if u.GetType() == 'M' {
+					liveMages++
+				} else {
+					liveOrcs++
+				}
+			}
+		}
 
-		world.Tick()
-
-		fmt.Printf("\n🎨 Стан мапи після кроку №%d:\n", turn)
+		if liveMages == 0 {
+			fmt.Println("\n🔴 ОРКИ ПЕРЕМОГЛИ! ГРА ЗАВЕРШЕНА.")
+			break // Вихід з циклу тікера
+		}
+		if liveOrcs == 0 {
+			fmt.Println("\n🔵 МАГИ ПЕРЕМОГЛИ! ГРА ЗАВЕРШЕНА.")
+			break
+		}
+		// Виводимо поточний кадр гри
+		fmt.Printf("\n--- КАДР №%d (FPS: 5) ---\n", turn)
 		renderWorld(world)
+
+		// Виводимо логи сутичок, якщо вони були на цьому кроці
+		if len(world.BattleLog) > 0 {
+			for _, log := range world.BattleLog {
+				fmt.Println(log)
+			}
+		}
+
+		// Прораховуємо наступний крок світу
+		world.Tick()
+		turn++
 	}
+
+	fmt.Println("Дякуємо за гру! Процес успішно завершено, пам'ять тікера звільнено через defer.")
 }
 
 // Нова оптимізована функція рендерингу
