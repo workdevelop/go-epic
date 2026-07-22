@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"go-epic/internal/engine"
 	"go-epic/internal/models"
 	"go-epic/internal/render"
@@ -24,6 +25,9 @@ func main() {
 		World: &World,
 	}
 
+	render.HideCursor()
+	defer render.ShowCursor()
+
 	render.ClearScreen()
 	render.RenderWorld(&World)
 
@@ -37,5 +41,11 @@ func main() {
 
 		render.RenderWorld(&World)
 		render.RenderLogs(e.TickLog)
+
+		if i > 20 {
+			// перевірка defer render.ShowCursor, бо для Ctrl-C потрібна складніша обробка (ловити сигнали ОС)
+			fmt.Println("Кінець гри")
+			break
+		}
 	}
 }

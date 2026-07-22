@@ -10,13 +10,16 @@ func resetCursor() {
 	fmt.Print("\x1b[H")
 }
 
-func hideCursor() {
+func HideCursor() {
 	fmt.Print("\x1b[?25l")
+}
+
+func ShowCursor() {
+	fmt.Print("\x1b[?25h")
 }
 
 func ClearScreen() {
 	fmt.Print("\x1b[2J")
-	hideCursor()
 }
 
 func renderMap(w *models.World) {
