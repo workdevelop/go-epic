@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+	"go-epic/internal/engine"
 	"go-epic/internal/models"
+	"go-epic/internal/render"
 	"time"
 )
 
@@ -26,17 +28,11 @@ func main() {
 		},
 	}
 
-	// 1. Повністю очищаємо екран один раз при старті гри
-	fmt.Print("\x1b[2J")
+	fmt.Print("\x1b[2J")   // Очищення термінала при старті
+	fmt.Print("\x1b[?25l") // Ховаємо курсор
 
-	// 2. Ховаємо системний курсор термінала
-	fmt.Print("\x1b[?25l")
-
-	// 3. Створюємо таймер на 200 мілісекунд (5 FPS)
-	ticker := time.NewTicker(200 * time.Millisecond)
-
-	// Переконуємось, що коли гра завершиться, ресурси таймера звільняться
-	defer ticker.Stop()
+	ticker := time.NewTicker(200 * time.Millisecond) // Створюємо таймер на 200 мілісекунд (5 FPS)
+	defer ticker.Stop()                              // Переконуємось, що коли гра завершиться, ресурси таймера звільняться
 
 	turn := 1
 
@@ -74,51 +70,44 @@ func main() {
 			break
 		}
 
-		// Рендеринг інтерфейсу
-		fmt.Printf("=== MAGE ARENA v0.2 | КАДР №%d ===\n", turn)
-		fmt.Printf("📊 Живих Магів: %d (%d) | Живих Орків: %d (%d) Хід %d     \n\n", liveMages, HealsSumMages, liveOrcs, HealsSumOrcs, turn) // Пробіли в кінці затирають старі символи
+		render.RenderWorld(world, turn, liveMages, liveOrcs, HealsSumMages, HealsSumOrcs)
 
-		renderWorld(world)
-
-		// Виводимо лог останньої сутички (якщо вона була)
-		fmt.Println("\n📝 ОСТАННЯ ПОДІЯ БОЮ:                                                                    ")
-		if len(world.BattleLog) > 0 {
-			// Беремо останній рядок логу для компактності
-			lastLog := world.BattleLog[len(world.BattleLog)-1]
-			fmt.Printf("- %-80s\n", lastLog)
-		} else {
-			fmt.Println("- На арені поки що тихо...                                                              ")
-		}
-
-		// Прораховуємо наступний крок світу
 		world.Tick()
-		turn++
-	}
-}
 
-func renderWorld(w models.World) {
-	for y := 0; y < w.Height; y++ {
-		for x := 0; x < w.Width; x++ {
-			if x == 0 || x == w.Width-1 || y == 0 || y == w.Height-1 {
-				fmt.Print("#")
-				continue
-			}
+		// 2. Етап Бою (Пошук Колізій через універсальний Battle)
+		for i := 0; i < len(world.Units); i++ {
+			for j := i + 1; j < len(world.Units); j++ {
+				u1, u2 := world.Units[i], world.Units[j]
 
-			var foundUnit models.Unit
-			for _, u := range w.Units {
-				ux, uy := u.GetPosition()
-				if ux == x && uy == y && u.IsAlive() {
-					foundUnit = u
-					break
+				// Перевірки: мертві не воюють, свої своїх не б'ють
+				if !u1.IsAlive() || !u2.IsAlive() || u1.GetType() == u2.GetType() {
+					continue
+				}
+
+				x1, y1 := u1.GetPosition()
+				x2, y2 := u2.GetPosition()
+
+				// Якщо юніти зустрілися на одній клітинці
+				if x1 == x2 && y1 == y2 {
+					// Запускаємо двосторонній бій через нашу універсальну функцію
+					log1 := engine.Battle(u1, u2) // u1 б'є u2
+					fmt.Println(log1)
+					log2 := engine.Battle(u2, u1) // u2 б'є u1
+					fmt.Println(log2)
+
+					world.BattleLog = append(world.BattleLog, log1, log2)
+
+					// Перевіряємо, чи хтось загинув після цієї сутички
+					if !u1.IsAlive() {
+						world.BattleLog = append(world.BattleLog, fmt.Sprintf("💀 %s загинув у епічній битві!", u1.GetName()))
+					}
+					if !u2.IsAlive() {
+						world.BattleLog = append(world.BattleLog, fmt.Sprintf("💀 %s загинув у епічній битві!", u2.GetName()))
+					}
 				}
 			}
-
-			if foundUnit != nil {
-				fmt.Printf("%c", foundUnit.GetType())
-			} else {
-				fmt.Print(".")
-			}
 		}
-		fmt.Println()
+
+		turn++
 	}
 }
