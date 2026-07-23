@@ -28,66 +28,47 @@ func main() {
 		},
 	}
 
-	fmt.Print("\x1b[2J")   // Очищення термінала при старті
+	fmt.Print("\x1b[2J")   // Очищення екрана при старті
 	fmt.Print("\x1b[?25l") // Ховаємо курсор
 
-	// 1. 🔒 ПЕРШИЙ DEFER: Гарантуємо увімкнення курсора назад при виході з програми.
-	// Що б не сталося далі (успішний фінал, Ctrl+C чи паніка), Go виконає цей рядок останнім.
-	defer fmt.Print("\x1b[?25h")
+	defer fmt.Print("\x1b[?25h") // Захист: повертаємо курсор при виході
 
-	ticker := time.NewTicker(200 * time.Millisecond) // Створюємо таймер на 200 мілісекунд (5 FPS)
-
-	// 2. 🔒 ДРУГИЙ DEFER: Очищаємо ресурси процесора та пам'яті від таймера.
-	// Працює за принципом LIFO: цей дефер зареєстровано другим, тому при виході
-	// він виконається ПЕРШИМ (спочатку зупиниться таймер, потім увімкнеться курсор).
+	ticker := time.NewTicker(200 * time.Millisecond) // 5 FPS
 	defer ticker.Stop()
 
 	turn := 1
 
 	for range ticker.C {
-		// Перевірка умов завершення гри
 		liveMages, liveOrcs := 0, 0
-		HealsSumMages, HealsSumOrcs := 0, 0
 		for _, u := range world.Units {
 			if u.IsAlive() {
 				if u.GetType() == 'M' {
-					HealsSumMages += u.GetHealth()
 					liveMages++
 				} else {
-					HealsSumOrcs += u.GetHealth()
 					liveOrcs++
 				}
 			}
 		}
 
-		// 4. 🚀 МАГІЯ АНІМАЦІЇ: Повертаємо курсор термінала в самий верхній лівий кут (0,0)
-		// Наступний вивід тексту почнеться з самого верху, плавно затираючи старий кадр
-		fmt.Print("\x1b[H")
-
 		if liveMages == 0 {
-			// Перед виходом повертаємо видимість курсору термінала
-			// fmt.Print("\x1b[?25h")
-			fmt.Print("\x1b[2J")
-			fmt.Println("\n🔴 ОРКИ ПЕРЕМОГЛИ! ГРА ЗАВЕРШЕНА.")
+			fmt.Println("\n🔴 ОРКИ ПЕРЕМОГЛИ! ГРА ЗАВЕРШЕНА.                                                ")
 			break
 		}
 		if liveOrcs == 0 {
-			// fmt.Print("\x1b[?25h")
-			fmt.Print("\x1b[2J")
-			fmt.Println("\n🔵 МАГИ ПЕРЕМОГЛИ! ГРА ЗАВЕРШЕНА.")
+			fmt.Println("\n🔵 МАГИ ПЕРЕМОГЛИ! ГРА ЗАВЕРШЕНА.                                                ")
 			break
 		}
 
-		render.RenderWorld(world, turn, liveMages, liveOrcs, HealsSumMages, HealsSumOrcs)
+		// Рендеринг нового TUI-інтерфейсу
+		render.RenderWorld(world, turn, liveMages, liveOrcs)
 
+		// Прораховуємо рух
 		world.Tick()
 
-		// 2. Етап Бою (Пошук Колізій через універсальний Battle)
+		// Прораховуємо бої та колізії
 		for i := 0; i < len(world.Units); i++ {
 			for j := i + 1; j < len(world.Units); j++ {
 				u1, u2 := world.Units[i], world.Units[j]
-
-				// Перевірки: мертві не воюють, свої своїх не б'ють
 				if !u1.IsAlive() || !u2.IsAlive() || u1.GetType() == u2.GetType() {
 					continue
 				}
@@ -95,22 +76,16 @@ func main() {
 				x1, y1 := u1.GetPosition()
 				x2, y2 := u2.GetPosition()
 
-				// Якщо юніти зустрілися на одній клітинці
 				if x1 == x2 && y1 == y2 {
-					// Запускаємо двосторонній бій через нашу універсальну функцію
-					log1 := engine.Battle(u1, u2) // u1 б'є u2
-					fmt.Println(log1)
-					log2 := engine.Battle(u2, u1) // u2 б'є u1
-					fmt.Println(log2)
-
+					log1 := engine.Battle(u1, u2)
+					log2 := engine.Battle(u2, u1)
 					world.BattleLog = append(world.BattleLog, log1, log2)
 
-					// Перевіряємо, чи хтось загинув після цієї сутички
 					if !u1.IsAlive() {
-						world.BattleLog = append(world.BattleLog, fmt.Sprintf("💀 %s загинув у епічній битві!", u1.GetName()))
+						world.BattleLog = append(world.BattleLog, fmt.Sprintf("💀 %s загинув!", u1.GetName()))
 					}
 					if !u2.IsAlive() {
-						world.BattleLog = append(world.BattleLog, fmt.Sprintf("💀 %s загинув у епічній битві!", u2.GetName()))
+						world.BattleLog = append(world.BattleLog, fmt.Sprintf("💀 %s загинув!", u2.GetName()))
 					}
 				}
 			}
