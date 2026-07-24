@@ -6,7 +6,7 @@ import (
 )
 
 // RenderWorld малює поточний кадр гри. Назва з Великої літери робить функцію публічною.
-func RenderWorld(w models.World, turn, liveMages, liveOrcs int) {
+func RenderWorld(w *models.World, turn, liveMages, liveOrcs int) {
 	// 1. Повертаємо курсор термінала в лівий верхній кут (0,0) для плавної анімації
 	fmt.Print("\x1b[H")
 

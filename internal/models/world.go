@@ -1,7 +1,7 @@
 package models
 
 import (
-	"fmt"
+	"sync"
 )
 
 type World struct {
@@ -9,29 +9,36 @@ type World struct {
 	Height    int
 	Units     []Unit
 	BattleLog []string
+	mu        sync.Mutex
+}
+
+func (w *World) AddBattleLog(msg string) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	w.BattleLog = append(w.BattleLog, msg)
+}
+
+func (w *World) GetBattleLog() []string {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	logCopy := make([]string, len(w.BattleLog))
+	copy(logCopy, w.BattleLog)
+	return logCopy
 }
 
 // Tick симулює один крок ігрового часу.
 // Світ перебирає всіх юнітів і змушує їх зробити хід.
 func (w *World) Tick() {
+	w.mu.Lock()
+	defer w.mu.Unlock()
 	w.BattleLog = []string{}
+}
 
-	// Етап Бою (Пошук Колізій) залишається з 6-го дня (виправлений варіант)
-	for i := 0; i < len(w.Units); i++ {
-		for j := i + 1; j < len(w.Units); j++ {
-			u1, u2 := w.Units[i], w.Units[j]
-			if !u1.IsAlive() || !u2.IsAlive() || u1.GetType() == u2.GetType() {
-				continue
-			}
+func (w *World) Lock() {
+	w.mu.Lock()
+}
 
-			x1, y1 := u1.GetPosition()
-			x2, y2 := u2.GetPosition()
-
-			if x1 == x2 && y1 == y2 {
-				// Пакет engine викликається на рівні main.go,
-				// тут ми просто фіксуємо факт перетину в лог для main
-				w.BattleLog = append(w.BattleLog, fmt.Sprintf("TRIGGER_BATTLE:%d:%d", i, j))
-			}
-		}
-	}
+func (w *World) Unlock() {
+	w.mu.Unlock()
 }

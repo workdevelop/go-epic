@@ -26,6 +26,7 @@ func main() {
 			&models.Orc{Position: models.Position{X: 7, Y: 5}, Name: "Жабо-гадюк", Health: 150, Damage: 22},
 			&models.Orc{Position: models.Position{X: 8, Y: 3}, Name: "Чурбано-поп", Health: 120, Damage: 30},
 		},
+		BattleLog: []string{}, // Ініціалізуємо порожній слайс логу
 	}
 
 	fmt.Print("\x1b[2J")   // Очищення екрана при старті
@@ -36,7 +37,7 @@ func main() {
 	// 🔥 ГОЛОВНА ОНОВЛЕННЯ ДНЯ: Оживляємо юнітів у паралельних потоках!
 	// Для кожного з 10 юнітів запускається своя незалежна горутина.
 	for i := 0; i < len(world.Units); i++ {
-		go world.Units[i].Brain(world.Width, world.Height)
+		go world.Units[i].Brain(&world)
 	}
 
 	ticker := time.NewTicker(200 * time.Millisecond) // 5 FPS
@@ -45,6 +46,8 @@ func main() {
 	turn := 1
 
 	for range ticker.C {
+		world.Lock()
+
 		liveMages, liveOrcs := 0, 0
 		for _, u := range world.Units {
 			if u.IsAlive() {
@@ -66,7 +69,7 @@ func main() {
 		}
 
 		// Рендеринг нового TUI-інтерфейсу
-		render.RenderWorld(world, turn, liveMages, liveOrcs)
+		render.RenderWorld(&world, turn, liveMages, liveOrcs)
 
 		// Прораховуємо бої та колізії
 		for i := 0; i < len(world.Units); i++ {
@@ -93,6 +96,7 @@ func main() {
 				}
 			}
 		}
+		world.Unlock()
 
 		turn++
 	}

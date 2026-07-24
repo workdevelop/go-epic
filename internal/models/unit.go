@@ -11,5 +11,5 @@ type Unit interface {
 	GetDamage() int
 	GetHealth() int
 	TakeDamage(amount int)
-	Brain(worldWidth, worldHeight int)
+	Brain(world *World)
 }

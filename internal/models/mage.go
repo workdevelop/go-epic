@@ -65,19 +65,20 @@ func (m Mage) GetDamage() int {
 	return rand.Intn(15) + 15
 }
 
-func (m *Mage) Brain(worldWidth, worldHeight int) {
+func (m *Mage) Brain(world *World) {
 	for {
+		world.Lock()
+		if !m.IsAlive() {
+			world.Unlock()
+			return
+		}
 
-		if !m.IsAlive() {
-			return
-		}
-		ms := rand.Intn(120) + 80
-		time.Sleep(time.Duration(ms) * time.Millisecond)
-		if !m.IsAlive() {
-			return
-		}
 		dx, dy := m.RandomStep()
+		_ = m.Move(dx, dy, world.Width, world.Height)
 
-		_ = m.Move(dx, dy, worldWidth, worldHeight)
+		world.Unlock()
+
+		delay := rand.Intn(200) + 100
+		time.Sleep(time.Duration(delay) * time.Millisecond)
 	}
 }

@@ -62,19 +62,20 @@ func (o Orc) GetHealth() int {
 	return o.Health
 }
 
-func (o *Orc) Brain(worldWidth, worldHeight int) {
+func (o *Orc) Brain(world *World) {
 	for {
+		world.Lock()
+		if !o.IsAlive() {
+			world.Unlock()
+			return
+		}
 
-		if !o.IsAlive() {
-			return
-		}
-		ms := rand.Intn(200) + 100
-		time.Sleep(time.Duration(ms) * time.Millisecond)
-		if !o.IsAlive() {
-			return
-		}
 		dx, dy := o.RandomStep()
+		_ = o.Move(dx, dy, world.Width, world.Height)
 
-		_ = o.Move(dx, dy, worldWidth, worldHeight)
+		world.Unlock()
+
+		delay := rand.Intn(120) + 80
+		time.Sleep(time.Duration(delay) * time.Millisecond)
 	}
 }
