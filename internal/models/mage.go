@@ -3,6 +3,7 @@ package models
 import (
 	"errors"
 	"math/rand"
+	"time"
 )
 
 type Mage struct {
@@ -62,4 +63,21 @@ func (m Mage) GetHealth() int {
 
 func (m Mage) GetDamage() int {
 	return rand.Intn(15) + 15
+}
+
+func (m *Mage) Brain(worldWidth, worldHeight int) {
+	for {
+
+		if !m.IsAlive() {
+			return
+		}
+		ms := rand.Intn(120) + 80
+		time.Sleep(time.Duration(ms) * time.Millisecond)
+		if !m.IsAlive() {
+			return
+		}
+		dx, dy := m.RandomStep()
+
+		_ = m.Move(dx, dy, worldWidth, worldHeight)
+	}
 }

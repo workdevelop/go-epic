@@ -33,6 +33,12 @@ func main() {
 
 	defer fmt.Print("\x1b[?25h") // Захист: повертаємо курсор при виході
 
+	// 🔥 ГОЛОВНА ОНОВЛЕННЯ ДНЯ: Оживляємо юнітів у паралельних потоках!
+	// Для кожного з 10 юнітів запускається своя незалежна горутина.
+	for i := 0; i < len(world.Units); i++ {
+		go world.Units[i].Brain(world.Width, world.Height)
+	}
+
 	ticker := time.NewTicker(200 * time.Millisecond) // 5 FPS
 	defer ticker.Stop()
 
@@ -61,9 +67,6 @@ func main() {
 
 		// Рендеринг нового TUI-інтерфейсу
 		render.RenderWorld(world, turn, liveMages, liveOrcs)
-
-		// Прораховуємо рух
-		world.Tick()
 
 		// Прораховуємо бої та колізії
 		for i := 0; i < len(world.Units); i++ {

@@ -16,19 +16,22 @@ type World struct {
 func (w *World) Tick() {
 	w.BattleLog = []string{}
 
+	// Етап Бою (Пошук Колізій) залишається з 6-го дня (виправлений варіант)
 	for i := 0; i < len(w.Units); i++ {
-		// Якщо юніт мертвий — пропускаємо його хід
-		if !w.Units[i].IsAlive() {
-			continue
-		}
+		for j := i + 1; j < len(w.Units); j++ {
+			u1, u2 := w.Units[i], w.Units[j]
+			if !u1.IsAlive() || !u2.IsAlive() || u1.GetType() == u2.GetType() {
+				continue
+			}
 
-		dx, dy := w.Units[i].RandomStep()
-		err := w.Units[i].Move(dx, dy, w.Width, w.Height)
-		if err != nil {
-			logMsg := fmt.Sprintf("⚠️ Помилка ходу [%s]: %s", w.Units[i].GetName(), err.Error())
-			w.BattleLog = append(w.BattleLog, logMsg)
-			continue
-		}
+			x1, y1 := u1.GetPosition()
+			x2, y2 := u2.GetPosition()
 
+			if x1 == x2 && y1 == y2 {
+				// Пакет engine викликається на рівні main.go,
+				// тут ми просто фіксуємо факт перетину в лог для main
+				w.BattleLog = append(w.BattleLog, fmt.Sprintf("TRIGGER_BATTLE:%d:%d", i, j))
+			}
+		}
 	}
 }

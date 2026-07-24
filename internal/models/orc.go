@@ -3,6 +3,7 @@ package models
 import (
 	"errors"
 	"math/rand"
+	"time"
 )
 
 type Orc struct {
@@ -59,4 +60,21 @@ func (o Orc) GetDamage() int {
 
 func (o Orc) GetHealth() int {
 	return o.Health
+}
+
+func (o *Orc) Brain(worldWidth, worldHeight int) {
+	for {
+
+		if !o.IsAlive() {
+			return
+		}
+		ms := rand.Intn(200) + 100
+		time.Sleep(time.Duration(ms) * time.Millisecond)
+		if !o.IsAlive() {
+			return
+		}
+		dx, dy := o.RandomStep()
+
+		_ = o.Move(dx, dy, worldWidth, worldHeight)
+	}
 }
