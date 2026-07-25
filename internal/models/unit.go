@@ -1,5 +1,10 @@
 package models
 
+type MoveEvent struct {
+	UnitIndex int
+	DX, DY    int
+}
+
 type Unit interface {
 	Move(dx, dy, worldWidth, worldHeight int) error
 	IsAlive() bool
@@ -11,5 +16,6 @@ type Unit interface {
 	GetDamage() int
 	GetHealth() int
 	TakeDamage(amount int)
-	Brain(world *World)
+
+	Brain(UnitIndex int, moveChain chan<- MoveEvent)
 }

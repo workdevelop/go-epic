@@ -1,44 +1,22 @@
 package models
 
-import (
-	"sync"
-)
-
 type World struct {
-	Width     int
-	Height    int
-	Units     []Unit
-	BattleLog []string
-	mu        sync.Mutex
+	Width       int
+	Height      int
+	Units       []Unit
+	BattleLog   []string
+	MoveChannel chan MoveEvent // 🔥 ТЕПЕР КАНАЛ НАЛЕЖИТЬ СВІТУ
 }
 
-func (w *World) AddBattleLog(msg string) {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-	w.BattleLog = append(w.BattleLog, msg)
+// NewWorld — конструктор для безпечного створення світу з ініціалізованим каналом
+func NewWorld(width, height int) *World {
+	return &World{
+		Width:       width,
+		Height:      height,
+		Units:       []Unit{},
+		BattleLog:   []string{},
+		MoveChannel: make(chan MoveEvent, 100), // Ініціалізуємо буфер тут!
+	}
 }
 
-func (w *World) GetBattleLog() []string {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-
-	logCopy := make([]string, len(w.BattleLog))
-	copy(logCopy, w.BattleLog)
-	return logCopy
-}
-
-// Tick симулює один крок ігрового часу.
-// Світ перебирає всіх юнітів і змушує їх зробити хід.
-func (w *World) Tick() {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-	w.BattleLog = []string{}
-}
-
-func (w *World) Lock() {
-	w.mu.Lock()
-}
-
-func (w *World) Unlock() {
-	w.mu.Unlock()
-}
+func (w *World) Tick() {}

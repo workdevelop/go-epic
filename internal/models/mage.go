@@ -3,6 +3,7 @@ package models
 import (
 	"errors"
 	"math/rand"
+	"sync" // Імпортуємо sync
 	"time"
 )
 
@@ -11,74 +12,80 @@ type Mage struct {
 	Name   string
 	Health int
 	Mana   int
+	mu     sync.Mutex // 🔥 ЛОКАЛЬНИЙ ЗАМОК ЮНІТА: Захищає Health, X та Y цього конкретного мага
 }
 
-// TakeDamage зменшує здоров'я мага на вказану величину шкоди (мутатор).
+func (m *Mage) Move(dx, dy, worldWidth, worldHeight int) error {
+	m.mu.Lock() // Блокуємо індивідуальну пам'ять мага
+	defer m.mu.Unlock()
+
+	nextX := m.X + dx
+	nextY := m.Y + dy
+
+	if nextX <= 0 || nextX >= worldWidth-1 || nextY <= 0 || nextY >= worldHeight-1 {
+		return errors.New("маг уперся в магічний бар'єр карти")
+	}
+
+	m.X = nextX
+	m.Y = nextY
+	return nil
+}
+
+func (m *Mage) IsAlive() bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.Health > 0
+}
+
 func (m *Mage) TakeDamage(amount int) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.Health -= amount
 	if m.Health < 0 {
 		m.Health = 0
 	}
 }
 
-// IsAlive перевіряє, чи живий маг.
-// Використовуємо ресивер-значення (m Mage) без зірочки, бо метод лише читає дані.
-// Go зробить безпечну копію мага для виконання цієї функції.
-func (m Mage) IsAlive() bool {
-	return m.Health > 0
-}
-
-func (m *Mage) Move(dx, dy, worldWidth, worldHeight int) error {
-
-	if m.X+dx <= 0 || m.X+dx >= worldWidth-1 || m.Y+dy <= 0 || m.Y+dy >= worldHeight-1 {
-		return errors.New("Маг намагався втекти з поля. Хід заблоковано")
-	}
-	m.X += dx
-	m.Y += dy
-	return nil
-}
-
-// RandomStep вираховує випадкове зміщення для мага
-func (m *Mage) RandomStep() (int, int) {
-	dx := rand.Intn(3) - 1 // Повертає -1, 0 або 1
-	dy := rand.Intn(3) - 1
-	return dx, dy
-}
-
-func (m Mage) GetPosition() (int, int) {
-	return m.X, m.Y
-}
-
-func (m Mage) GetType() rune {
-	return 'M'
-}
-
-func (m Mage) GetName() string {
-	return m.Name
-}
-
-func (m Mage) GetHealth() int {
+func (m *Mage) GetHealth() int {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	return m.Health
 }
 
-func (m Mage) GetDamage() int {
-	return rand.Intn(15) + 15
+// Ці два методи можна залишити без змін, бо вони повертають копії значень
+// або працюють з незмінними даними (Name), але для повної безпеки GetPosition теж захистимо:
+func (m *Mage) GetPosition() (int, int) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.X, m.Y
 }
 
-func (m *Mage) Brain(world *World) {
+func (m *Mage) GetType() rune          { return 'M' }
+func (m *Mage) GetName() string        { return m.Name }
+func (m *Mage) GetDamage() int         { return rand.Intn(15) + 15 }
+func (m *Mage) RandomStep() (int, int) { return rand.Intn(3) - 1, rand.Intn(3) - 1 }
+
+func (m *Mage) Brain(unitIndex int, moveChan chan<- MoveEvent) {
 	for {
-		world.Lock()
 		if !m.IsAlive() {
-			world.Unlock()
+			return
+		}
+
+		delay := rand.Intn(200) + 100
+		time.Sleep(time.Duration(delay) * time.Millisecond)
+
+		if !m.IsAlive() {
 			return
 		}
 
 		dx, dy := m.RandomStep()
-		_ = m.Move(dx, dy, world.Width, world.Height)
 
-		world.Unlock()
-
-		delay := rand.Intn(200) + 100
-		time.Sleep(time.Duration(delay) * time.Millisecond)
+		// 🔥 ЗАМІСТЬ МУТЕКСА: Просто кидаємо подію в канал.
+		// Цей рядок є потокобезпечним. Стрілка вказує В КАНАЛ.
+		moveChan <- MoveEvent{
+			UnitIndex: unitIndex,
+			DX:        dx,
+			DY:        dy,
+		}
 	}
 }
