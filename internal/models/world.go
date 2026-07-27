@@ -15,7 +15,7 @@ func NewWorld(width, height int) *World {
 		Height:      height,
 		Units:       []Unit{},
 		BattleLog:   []string{},
-		MoveChannel: make(chan MoveEvent, 100), // Ініціалізуємо буфер тут!
+		MoveChannel: make(chan MoveEvent, 1000), // Ініціалізуємо буфер тут!
 	}
 }
 

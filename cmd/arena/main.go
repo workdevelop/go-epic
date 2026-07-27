@@ -5,12 +5,13 @@ import (
 	"go-epic/internal/engine"
 	"go-epic/internal/models"
 	"go-epic/internal/render"
+	"math/rand"
 	"time"
 )
 
 func main() {
 	// 1. Створюємо світ через конструктор (він сам створить буферизований канал)
-	world := models.NewWorld(12, 12)
+	world := models.NewWorld(40, 20)
 
 	// 2. 🔥 ВИПРАВЛЕНА ІНІЦІАЛІЗАЦІЯ: Явно вказуємо назви полів (Named Fields).
 	// Поле 'mu' ми не пишемо — воно ініціалізується автоматично.
@@ -26,6 +27,27 @@ func main() {
 		&models.Orc{Position: models.Position{X: 9, Y: 2}, Name: "Блювотний", Health: 140, Damage: 18},
 		&models.Orc{Position: models.Position{X: 7, Y: 5}, Name: "Жабо-гадюк", Health: 150, Damage: 22},
 		&models.Orc{Position: models.Position{X: 8, Y: 3}, Name: "Чурбано-поп", Health: 120, Damage: 30},
+	}
+
+	for i := 6; i <= 100; i++ {
+		rx := rand.Intn(world.Width-2) + 1
+		ry := rand.Intn(world.Height-2) + 1
+		world.Units = append(world.Units, &models.Mage{
+			Position: models.Position{X: rx, Y: ry},
+			Name:     fmt.Sprintf("Mage-%d", i),
+			Health:   100,
+			Mana:     50,
+		})
+	}
+	for i := 6; i <= 100; i++ {
+		rx := rand.Intn(world.Width-2) + 1
+		ry := rand.Intn(world.Height-2) + 1
+		world.Units = append(world.Units, &models.Orc{
+			Position: models.Position{X: rx, Y: ry},
+			Name:     fmt.Sprintf("Orc-%d", i),
+			Health:   120,
+			Damage:   15,
+		})
 	}
 
 	fmt.Print("\x1b[2J")         // Очищення термінала при старті
