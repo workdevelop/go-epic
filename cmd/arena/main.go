@@ -120,9 +120,10 @@ func main() {
 					x2, y2 := u2.GetPosition()
 
 					if x1 == x2 && y1 == y2 {
-						log1 := engine.Battle(u1, u2)
-						log2 := engine.Battle(u2, u1)
-						world.BattleLog = append(world.BattleLog, log1, log2)
+
+						combatLogs := engine.Battle(u1, u2)
+
+						world.BattleLog = append(world.BattleLog, combatLogs...)
 
 						if !u1.IsAlive() {
 							world.BattleLog = append(world.BattleLog, fmt.Sprintf("💀 %s загинув!", u1.GetName()))
