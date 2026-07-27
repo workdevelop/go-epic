@@ -11,7 +11,7 @@ func RenderWorld(w *models.World, turn, liveMages, liveOrcs int) {
 	fmt.Print("\x1b[H")
 
 	// 2. Малюємо верхню панель (сервісна інформація)
-	fmt.Printf("%-60s\n", fmt.Sprintf("=== MAGE ARENA v0.2 | КАДР №%d ===", turn))
+	fmt.Printf("%-60s\n", fmt.Sprintf("=== MAGE ARENA v0.3 | КАДР №%d ===", turn))
 	fmt.Printf("%-60s\n\n", fmt.Sprintf("📊 Живих Магів: %d | Живих Орків: %d", liveMages, liveOrcs))
 
 	// 3. ГОРИЗОНТАЛЬНИЙ LAYOUT: Рядок за рядком малюємо і карту, і бічну панель
