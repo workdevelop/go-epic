@@ -1,20 +1,23 @@
 package main
 
 import (
-	"database/sql" // Стандартний пакет для роботи з SQL БД
+	"context" // Пакет для керування контекстом виконання та таймаутами сервера
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"os/signal" // Перехоплювач системних сигналів
+	"syscall"
 	"time"
 
 	"go-epic/internal/engine"
 	"go-epic/internal/models"
 
-	_ "modernc.org/sqlite" // Драйвер SQLite (імпорт чисто для реєстрації)
+	_ "modernc.org/sqlite"
 )
 
-// MatchHistoryDTO описує структуру для виведення історії в JSON
 type MatchHistoryDTO struct {
 	ID         int       `json:"id"`
 	PlayedAt   time.Time `json:"played_at"`
@@ -22,16 +25,22 @@ type MatchHistoryDTO struct {
 	TurnsTotal int       `json:"turns_total"`
 }
 
+// SpawnRequest описує JSON-структуру для створення нового юніта
+type SpawnRequest struct {
+	Type   string `json:"type"` // "mage" або "orc"
+	Name   string `json:"name"`
+	X      int    `json:"x"`
+	Y      int    `json:"y"`
+	Health int    `json:"health"`
+}
+
 func main() {
-	// 1. 🔥 ІНІЦІАЛІЗАЦІЯ БАЗИ ДАНИХ (Пул з'єднань створюється автоматично)
+	// Ініціалізація бази даних SQLite
 	db, err := sql.Open("sqlite", "arena.db")
 	if err != nil {
 		log.Fatalf("Неможливо відкрити базу даних: %v", err)
 	}
-	// Гарантуємо закриття конектів до бази при завершенні роботи сервера
-	defer db.Close()
 
-	// 2. СТВОРЮЄМО ТАБЛИЦЮ (Авто-міграція при старті)
 	query := `
 	CREATE TABLE IF NOT EXISTS match_history (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -46,20 +55,20 @@ func main() {
 
 	world := models.NewWorld(20, 20)
 
-	// Заселяємо 5 магів та 5 орків
+	// Початковий спавн 5 магів та 5 орків
 	for i := 1; i <= 5; i++ {
-		world.Units = append(world.Units, &models.Mage{Position: models.Position{X: i + 1, Y: 2}, Name: fmt.Sprintf("Mage-%d", i), Health: 110, Mana: 50})
+		world.Units = append(world.Units, &models.Mage{Position: models.Position{X: i + 1, Y: 2}, Name: fmt.Sprintf("Mage-%d", i), Health: 100, Mana: 50})
 		world.Units = append(world.Units, &models.Orc{Position: models.Position{X: i + 1, Y: 5}, Name: fmt.Sprintf("Orc-%d", i), Health: 120, Damage: 15})
 	}
 
+	// Запуск початкових горутин-мозків юнітів
 	for i := 0; i < len(world.Units); i++ {
 		go world.Units[i].Brain(i, world.MoveChannel)
 	}
 
-	// Змінна для фіксації фіналу, щоб не записувати гру в БД по 100 разів
 	var gameSaved = false
 
-	// Фонова горутина для прорахунку боїв
+	// Фонова горутина для прорахунку боїв та читання каналу
 	go func() {
 		turn := 1
 		for event := range world.MoveChannel {
@@ -82,25 +91,23 @@ func main() {
 				}
 			}
 
-			// 🛢️ ЛОГІКА ФІНАЛУ: Якщо одна з армій вимерла і матч ще не збережено
-			if (liveMages == 0 || liveOrcs == 0) && !gameSaved {
+			if (liveMages == 0 || liveOrcs == 0) && !gameSaved && len(world.Units) > 0 {
 				gameSaved = true
 				winner := "Орки"
 				if liveOrcs == 0 {
 					winner = "Маги"
 				}
 
-				// Записуємо фінал у базу через параметризований SQL-запит (захист від SQL-ін'єкцій)
 				insertQuery := `INSERT INTO match_history (played_at, winner, turns_total) VALUES (?, ?, ?)`
 				_, dbErr := db.Exec(insertQuery, time.Now(), winner, turn)
 				if dbErr != nil {
-					log.Printf("Помилка збереження матчу в БД: %v", dbErr)
+					log.Printf("Помилка збереження матчу: %v", dbErr)
 				} else {
-					log.Printf("💾 Матч завершено! Переможець: %s. Результат успішно збережено в БД SQLite.", winner)
+					log.Printf("💾 Матч завершено! Переможець: %s збережений в БД.", winner)
 				}
 			}
 
-			// Прораховуємо сутички
+			// Прораховуємо колізії
 			for i := 0; i < len(world.Units); i++ {
 				for j := i + 1; j < len(world.Units); j++ {
 					u1, u2 := world.Units[i], world.Units[j]
@@ -122,42 +129,139 @@ func main() {
 		}
 	}()
 
-	// Ендпоінт стану гри (з Дня 22)
-	http.HandleFunc("/state", func(w http.ResponseWriter, r *http.Request) {
+	// --- МАРШРУТИ REST API ---
+
+	// 1. GET /api/state — Отримання стану гри
+	http.HandleFunc("/api/state", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Метод не підтримується", http.StatusMethodNotAllowed)
+			return
+		}
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(world)
 	})
 
-	// 🛠️ НОВИЙ ЕНДПОІНТ: /history (Зчитування з бази даних)
-	http.HandleFunc("/history", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-
-		// Виконуємо SELECT-запит
-		rows, qErr := db.Query("SELECT id, played_at, winner, turns_total FROM match_history ORDER BY id DESC")
-		if qErr != nil {
-			http.Error(w, "Помилка читання бази даних", http.StatusInternalServerError)
+	// 2. GET /api/history — Отримання історії матчів
+	http.HandleFunc("/api/history", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Метод не підтримується", http.StatusMethodNotAllowed)
 			return
 		}
-		defer rows.Close() // Обов'язково закриваємо курсор rows, щоб не було витоку дескрипторів
+		w.Header().Set("Content-Type", "application/json")
+		rows, qErr := db.Query("SELECT id, played_at, winner, turns_total FROM match_history ORDER BY id DESC")
+		if qErr != nil {
+			http.Error(w, "Помилка БД", http.StatusInternalServerError)
+			return
+		}
+		defer rows.Close()
 
 		var history []MatchHistoryDTO
-
-		// Перебираємо рядки з бази
 		for rows.Next() {
 			var h MatchHistoryDTO
-			// Явно скануємо колонки у підготовлені вказівники структури
-			scanErr := rows.Scan(&h.ID, &h.PlayedAt, &h.Winner, &h.TurnsTotal)
-			if scanErr != nil {
-				log.Printf("Помилка сканування рядка: %v", scanErr)
-				continue
+			if err := rows.Scan(&h.ID, &h.PlayedAt, &h.Winner, &h.TurnsTotal); err == nil {
+				history = append(history, h)
 			}
-			history = append(history, h)
 		}
-
-		// Віддаємо масив історії в JSON
 		_ = json.NewEncoder(w).Encode(history)
 	})
 
-	fmt.Println("🌐 HTTP API Сервер запущено на http://localhost:8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	// 3. POST /api/spawn — Динамічне створення нового юніта через JSON-боді
+	http.HandleFunc("/api/spawn", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Метод не підтримується", http.StatusMethodNotAllowed)
+			return
+		}
+
+		var req SpawnRequest
+		// Парсимо JSON, який прислав клієнт
+		err := json.NewDecoder(r.Body).Decode(&req)
+		if err != nil {
+			http.Error(w, "Некоректний JSON-боді", http.StatusBadRequest)
+			return
+		}
+
+		world.Lock()
+		defer world.Unlock()
+
+		var newUnit models.Unit
+		newPos := models.Position{X: req.X, Y: req.Y}
+
+		if req.Type == "mage" {
+			newUnit = &models.Mage{Position: newPos, Name: req.Name, Health: req.Health, Mana: 50}
+		} else if req.Type == "orc" {
+			newUnit = &models.Orc{Position: newPos, Name: req.Name, Health: req.Health, Damage: 15}
+		} else {
+			http.Error(w, "Невідомий тип юніта. Дозволено: mage, orc", http.StatusBadRequest)
+			return
+		}
+
+		// Додаємо нового юніта на арену на льоту
+		world.Units = append(world.Units, newUnit)
+		newIndex := len(world.Units) - 1
+
+		// 🔥 ОДРАЗУ ЗАПУСКАЄМО ДЛЯ НЬОГО ОКРЕМУ ГОРУТИНУ МОЗКУ!
+		go world.Units[newIndex].Brain(newIndex, world.MoveChannel)
+
+		// Скидаємо прапорець фіналу матчу, бо прийшов новий боєць
+		gameSaved = false
+
+		w.WriteHeader(http.StatusCreated)
+		_, _ = w.Write([]byte(fmt.Sprintf(`{"message": "Юніт %s успішно спавнений у горутині №%d"}`, req.Name, newIndex)))
+	})
+
+	// 4. POST /api/reset — Повний перезапуск гри
+	http.HandleFunc("/api/reset", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Метод не підтримується", http.StatusMethodNotAllowed)
+			return
+		}
+		world.Lock()
+		world.Units = []models.Unit{} // Очищуємо армію
+		world.BattleLog = []string{}
+		gameSaved = false
+		world.Unlock()
+
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"message": "Арену повністю очищено й перезапущено"}`))
+	})
+
+	// Ініціалізуємо структуру HTTP-сервера для можливості його Graceful зупинки
+	server := &http.Server{
+		Addr:    ":8080",
+		Handler: nil,
+	}
+
+	// 🔥 НАЛАШТУВАННЯ GRACEFUL SHUTDOWN
+	// Створюємо буферизований канал для перехоплення сигналів ОС
+	shutdownChan := make(chan os.Signal, 1)
+	// Кажемо системі надсилати нам сповіщення про Ctrl+C (Interrupt) або SIGTERM (Kubernetes)
+	signal.Notify(shutdownChan, os.Interrupt, syscall.SIGTERM)
+
+	// Запускаємо вебсервер в ОКРЕМІЙ горутині, щоб він не блокував main
+	go func() {
+		fmt.Println("🌐 PROD-READY REST API Сервер запущено на http://localhost:8080")
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Помилка запуску сервера: %v", err)
+		}
+	}()
+
+	// 🛑 ГОЛОВНИЙ ПОТІК ЗАВИСАЄ ТУТ І ЧЕКАЄ НА СИГНАЛ ВИМКНЕННЯ ВІД ОС
+	<-shutdownChan
+	fmt.Println("\n⚠️ Отримано сигнал зупинки! Починається процес Graceful Shutdown...")
+
+	// Створюємо контекст із таймаутом 5 секунд. Якщо за 5 сек сервер не закриється сам,
+	// ОС вимкне його примусово
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// 1. Зупиняємо вебсервер (він припиняє приймати нові HTTP-запити)
+	if err := server.Shutdown(ctx); err != nil {
+		log.Printf("Помилка чистого закриття сервера: %v", err)
+	}
+
+	// 2. Закриваємо базу даних SQLite, зберігаючи цілісність arena.db файлу
+	log.Println("🛢️ Закриття пулу з'єднань SQLite...")
+	db.Close()
+
+	fmt.Println("🏁 Сервер успішно та чисто завершив свою роботу. Проєкт Mage Arena v1.0 готовий!")
 }
