@@ -1,6 +1,6 @@
 package models
 
 type Position struct {
-	X int
-	Y int
+	X int `json:"x"` // У JSON це поле буде маленькою літерою "x"
+	Y int `json:"y"`
 }

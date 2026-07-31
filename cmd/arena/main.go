@@ -1,128 +1,53 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"go-epic/internal/engine"
 	"go-epic/internal/models"
-	"go-epic/internal/render"
-	"math/rand"
-	"time"
+	"log"
+	"net/http" // Вбудований HTTP-пакет Go
 )
 
 func main() {
-	// 1. Створюємо світ через конструктор (він сам створить буферизований канал)
-	world := models.NewWorld(40, 20)
+	// Створюємо великий світ (код ініціалізації з 18-го дня — автогенератор армії)
+	world := models.NewWorld(20, 20)
 
-	// 2. 🔥 ВИПРАВЛЕНА ІНІЦІАЛІЗАЦІЯ: Явно вказуємо назви полів (Named Fields).
-	// Поле 'mu' ми не пишемо — воно ініціалізується автоматично.
-	world.Units = []models.Unit{
-		&models.Mage{Position: models.Position{X: 2, Y: 2}, Name: "Гендальф", Health: 210, Mana: 60},
-		&models.Mage{Position: models.Position{X: 3, Y: 3}, Name: "Саруман", Health: 130, Mana: 60},
-		&models.Mage{Position: models.Position{X: 2, Y: 8}, Name: "Рейстлін", Health: 190, Mana: 80},
-		&models.Mage{Position: models.Position{X: 4, Y: 5}, Name: "Медів", Health: 210, Mana: 50},
-		&models.Mage{Position: models.Position{X: 3, Y: 9}, Name: "Джайна", Health: 195, Mana: 70},
-
-		&models.Orc{Position: models.Position{X: 9, Y: 9}, Name: "Грязний", Health: 150, Damage: 20},
-		&models.Orc{Position: models.Position{X: 8, Y: 8}, Name: "Червивий", Health: 160, Damage: 25},
-		&models.Orc{Position: models.Position{X: 9, Y: 2}, Name: "Блювотний", Health: 140, Damage: 18},
-		&models.Orc{Position: models.Position{X: 7, Y: 5}, Name: "Жабо-гадюк", Health: 150, Damage: 22},
-		&models.Orc{Position: models.Position{X: 8, Y: 3}, Name: "Чурбано-поп", Health: 120, Damage: 30},
+	// Згенеруємо для тесту 5 магів та 5 орків
+	for i := 1; i <= 5; i++ {
+		world.Units = append(world.Units, &models.Mage{Position: models.Position{X: i + 1, Y: 2}, Name: fmt.Sprintf("Mage-%d", i), Health: 100, Mana: 50})
+		world.Units = append(world.Units, &models.Orc{Position: models.Position{X: i + 1, Y: 5}, Name: "Orc-", Health: 120, Damage: 15})
 	}
 
-	for i := 6; i <= 100; i++ {
-		rx := rand.Intn(world.Width-2) + 1
-		ry := rand.Intn(world.Height-2) + 1
-		world.Units = append(world.Units, &models.Mage{
-			Position: models.Position{X: rx, Y: ry},
-			Name:     fmt.Sprintf("Mage-%d", i),
-			Health:   100,
-			Mana:     50,
-		})
-	}
-	for i := 6; i <= 100; i++ {
-		rx := rand.Intn(world.Width-2) + 1
-		ry := rand.Intn(world.Height-2) + 1
-		world.Units = append(world.Units, &models.Orc{
-			Position: models.Position{X: rx, Y: ry},
-			Name:     fmt.Sprintf("Orc-%d", i),
-			Health:   120,
-			Damage:   15,
-		})
-	}
-
-	fmt.Print("\x1b[2J")         // Очищення термінала при старті
-	fmt.Print("\x1b[?25l")       // Ховаємо курсор
-	defer fmt.Print("\x1b[?25h") // Захист: повертаємо курсор при виході
-
-	// Запуск автономних горутин-мозків юнітів
+	// Запускаємо фонові горутини-мізки юнітів (вони живуть паралельно у фоні RAM)
 	for i := 0; i < len(world.Units); i++ {
 		go world.Units[i].Brain(i, world.MoveChannel)
 	}
 
-	ticker := time.NewTicker(200 * time.Millisecond) // Будильник рендерингу (5 FPS)
-	defer ticker.Stop()
+	// Фонова горутина для прорахунку боїв та читання черги ходів з каналу
+	// Фонова горутина для прорахунку боїв та читання черги ходів з каналу
+	go func() {
+		for event := range world.MoveChannel {
+			// 🔥 БЛОКУЄМО СВІТ ДЛЯ ПРОРАХУНКУ КАДРУ ПОДІЇ
+			world.Lock()
 
-	turn := 1
-
-	// 🔥 ПРАВИЛЬНИЙ АСИНХРОННИЙ ІГРОВИЙ ЦИКЛ (День 17)
-	for {
-		// Підрахунок живих сил на арені
-		liveMages, liveOrcs := 0, 0
-		for _, u := range world.Units {
-			if u.IsAlive() {
-				if u.GetType() == 'M' {
-					liveMages++
-				} else {
-					liveOrcs++
-				}
-			}
-		}
-
-		if liveMages == 0 {
-			fmt.Println("\n🔴 ОРКИ ПЕРЕМОГЛИ! ГРА ЗАВЕРШЕНА.                                                ")
-			break
-		}
-		if liveOrcs == 0 {
-			fmt.Println("\n🔵 МАГИ ПЕРЕМОГЛИ! ГРА ЗАВЕРШЕНА.                                                ")
-			break
-		}
-
-		// 🔀 МУЛЬТИПЛЕКСУВАННЯ КАНАЛІВ: Слухаємо події та таймер ОДНОЧАСНО
-		select {
-
-		// КЕЙС №1: Юніт надіслав свій хід через канал світу
-		case event := <-world.MoveChannel:
 			activeUnit := world.Units[event.UnitIndex]
 			if activeUnit.IsAlive() {
-				err := activeUnit.Move(event.DX, event.DY, world.Width, world.Height)
-				if err != nil {
-					world.BattleLog = append(world.BattleLog, fmt.Sprintf("⚠️ %s: %s", activeUnit.GetName(), err.Error()))
-				}
+				_ = activeUnit.Move(event.DX, event.DY, world.Width, world.Height)
 			}
 
-		// КЕЙС №2: Спрацював фоновий таймер (час малювати кадр)
-		case <-ticker.C:
-			// 1. Малюємо кольоровий TUI-екран
-			render.RenderWorld(world, turn, liveMages, liveOrcs)
-
-			// 2. Очищуємо лог подій перед початком нового кадру
-			world.BattleLog = []string{}
-
-			// 3. Прораховуємо етап боїв та нових колізій строго в момент рендеру
+			// Прораховуємо сутички
 			for i := 0; i < len(world.Units); i++ {
 				for j := i + 1; j < len(world.Units); j++ {
 					u1, u2 := world.Units[i], world.Units[j]
 					if !u1.IsAlive() || !u2.IsAlive() || u1.GetType() == u2.GetType() {
 						continue
 					}
-
 					x1, y1 := u1.GetPosition()
 					x2, y2 := u2.GetPosition()
 
 					if x1 == x2 && y1 == y2 {
-
 						combatLogs := engine.Battle(u1, u2)
-
 						world.BattleLog = append(world.BattleLog, combatLogs...)
 
 						if !u1.IsAlive() {
@@ -135,12 +60,30 @@ func main() {
 				}
 			}
 
-			turn++ // Переходимо до наступного кадру
-
-		// КЕЙС №3: Захисний таймаут на 5 секунд
-		case <-time.After(5 * time.Second):
-			fmt.Println("\n🚨 КРИТИЧНА ПОМИЛКА: Події зупинилися. Вихід за таймаутом.")
-			return
+			// 🔥 ВІДПУСКАЄМО ЗАМОК: тепер HTTP-сервер може безпечно зняти Snapshot
+			world.Unlock()
 		}
-	}
+	}()
+
+	// 🛠️ СТВОРЮЄМО HTTP API ЕНДПОІНТ
+	// http.HandleFunc реєструє маршрут та функцію-хендлер для його обробки
+	http.HandleFunc("/state", func(w http.ResponseWriter, r *http.Request) {
+		// 1. Встановлюємо HTTP-заголовок (Content-Type: application/json)
+		w.Header().Set("Content-Type", "application/json")
+
+		// Статус відповіді 200 OK
+		w.WriteHeader(http.StatusOK)
+
+		// 2. Серіалізуємо об'єкт world у JSON та випліскуємо його прямо в HTTP-потік відповіді клієнту
+		err := json.NewEncoder(w).Encode(world)
+		if err != nil {
+			http.Error(w, "Критична помилка серіалізації", http.StatusInternalServerError)
+		}
+	})
+
+	fmt.Println("🌐 HTTP API Сервер успішно запущено на http://localhost:8080")
+	fmt.Println("Зробіть GET-запит на http://localhost:8080/state для перевірки стану гри...")
+
+	// ListenAndServe запускає вебсервер. Цей рядок блокує головний потік main — сервер працюватиме безкінечно
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }

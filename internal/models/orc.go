@@ -8,11 +8,11 @@ import (
 )
 
 type Orc struct {
-	Position
-	Name   string
-	Health int
-	Damage int
-	mu     sync.Mutex // 🔥 ЛОКАЛЬНИЙ ЗАМОК ОРКА
+	Position `json:"position"`
+	Name     string `json:"name"`
+	Health   int    `json:"health"`
+	Damage   int    `json:"damage"`
+	mu       sync.Mutex
 }
 
 func (o *Orc) Move(dx, dy, worldWidth, worldHeight int) error {

@@ -8,11 +8,11 @@ import (
 )
 
 type Mage struct {
-	Position
-	Name   string
-	Health int
-	Mana   int
-	mu     sync.Mutex // 🔥 ЛОКАЛЬНИЙ ЗАМОК ЮНІТА: Захищає Health, X та Y цього конкретного мага
+	Position `json:"position"` // Вбудована структура серіалізується як окремий об'єкт
+	Name     string            `json:"name"`
+	Health   int               `json:"health"`
+	Mana     int               `json:"mana"`
+	mu       sync.Mutex
 }
 
 func (m *Mage) Move(dx, dy, worldWidth, worldHeight int) error {
